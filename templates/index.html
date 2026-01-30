@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Vertex - Professional Network</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; }
+
+.app-container { display: flex; flex-direction: column; height: 100vh; }
+
+.top-nav {
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+}
+
+.logo-placeholder {
+    width: 120px;
+    height: 36px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #e2e8f0;
+}
+
+.profile-icon:hover {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-color: #cbd5e1;
+}
+
+.main-layout { display: flex; flex: 1; overflow: hidden; }
+
+.content { flex: 1; overflow: auto; background: #fafbfc; }
+
+.filter-bar {
+    padding: 20px 32px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.search-bar {
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 9px 16px 9px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    transition: all 0.2s;
+    color: #475569;
+    font-weight: 500;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.search-input::placeholder {
+    color: #94a3b8;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.filters-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 9px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    color: #475569;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    min-width: 140px;
+}
+.filter-select:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-0.5px);
+}
+.filter-select:focus {
+    outline: none;
+    border-color: #cbd5e1;
+    box-shadow: 0 0 0 3px rgba(203,213,225,0.1);
+}
+
+.add-btn { 
+    padding: 9px 18px; 
+    background: white;
+    color: #1e293b; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: all 0.2s;
+    font-weight: 600;
+    font-size: 13px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+.add-btn:hover { 
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-0.5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.add-btn:active { transform: translateY(0); }
+
+.connection-row { 
+    padding: 20px 32px;
+    margin: 12px 24px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer; 
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.connection-row:first-child {
+    margin-top: 12px;
+}
+.connection-row:hover { 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+    border-color: #cbd5e1;
+}
+.connection-row:active { transform: translateY(0); }
+.connection-row.expanded {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #cbd5e1;
+}
+
+.connection-top { display: flex; justify-content: space-between; align-items: center; }
+.connection-name { font-weight: 600; font-size: 15px; min-width: 180px; }
+.connection-rating { 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rating-circle {
+    width: 44px;
+    height: 44px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rating-circle svg {
+    transform: rotate(-90deg);
+}
+
+.rating-circle-bg {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 4;
+}
+
+.rating-circle-fill {
+    fill: none;
+    stroke: #2563eb;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.3s ease;
+}
+
+.rating-number {
+    position: absolute;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.momentum-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.momentum-Improving {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+.momentum-Declining {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+.momentum-Stagnant {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.connection-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0;
+}
+.connection-details.show {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 20px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.detail-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-color: #cbd5e1;
+}
+
+.detail-item.ai-summary-item {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border: 1px solid #e9d5ff;
+}
+
+.detail-item.ai-summary-item:hover {
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.15);
+    border-color: #d8b4fe;
+}
+
+.detail-item.ai-summary-item .detail-label {
+    color: #7c3aed;
+}
+
+.detail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #2563eb;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.detail-value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.expand-icon {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #94a3b8;
+}
+.expand-icon.rotated {
+    transform: rotate(180deg);
+    color: #2563eb;
+}
+
+/* AI Panel Styles */
+.ai-panel { 
+    width: 520px; 
+    background: white; 
+    border-left: 1px solid #e2e8f0; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.ai-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+}
+
+.ai-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.ai-messages { 
+    flex: 1; 
+    overflow: auto; 
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ai-input-container { 
+    padding: 16px 24px 24px 24px;
+    background: white;
+}
+
+.ai-input-wrapper {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.ai-input-wrapper:focus-within {
+    border-color: #cbd5e1;
+    background: white;
+}
+
+.ai-input { 
+    width: 100%; 
+    padding: 14px 52px 14px 18px; 
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    font-size: 14px;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.5;
+    color: #1e293b;
+    max-height: 120px;
+}
+.ai-input:focus {
+    outline: none;
+}
+
+.ai-input::placeholder {
+    color: #94a3b8;
+}
+
+.send-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background: #1e293b;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+}
+.send-btn:hover {
+    background: #334155;
+}
+.send-btn:active {
+    transform: scale(0.95);
+}
+.send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.user-msg { 
+    background: #f1f5f9;
+    padding: 10px 14px; 
+    border-radius: 18px;
+    font-size: 14px;
+    align-self: flex-end;
+    max-width: 75%;
+    animation: slideInRight 0.3s ease;
+    color: #1e293b;
+    line-height: 1.5;
+}
+
+/* Updated AI message styles */
+.ai-msg {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 14px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+    align-self: flex-start;
+    max-width: 85%;
+    animation: slideInLeft 0.3s ease;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #334155;
+}
+
+.ai-msg strong {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.ai-msg p {
+    margin: 8px 0;
+}
+
+.ai-msg p:first-child {
+    margin-top: 0;
+}
+
+.ai-msg p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-msg ul, .ai-msg ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.ai-msg li {
+    margin: 5px 0;
+    line-height: 1.6;
+}
+
+.ai-msg h3, .ai-msg h4 {
+    display: inline;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 18px;
+    width: fit-content;
+    border: 1px solid #e2e8f0;
+    animation: slideInLeft 0.3s ease;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #94a3b8;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Updated quick actions */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.quick-action-btn {
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #475569;
+    font-weight: 500;
+}
+
+.quick-action-btn:hover {
+    background: white;
+    border-color: #cbd5e1;
+    color: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Modal Styles */
+.modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(15, 23, 42, 0.6); 
+    backdrop-filter: blur(4px);
+    display: none; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 1000;
+    animation: fadeIn 0.3s;
+}
+.modal-overlay.show { display: flex; }
+.modal { 
+    background: white; 
+    border-radius: 16px; 
+    width: 680px; 
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 0;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 28px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fafbfc;
+    border-radius: 16px 16px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.close-modal-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    color: #64748b;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.close-modal-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.form-container {
+    padding: 28px;
+}
+
+.form-section {
+    margin-bottom: 28px;
+}
+
+.form-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #2563eb;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 16px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-field.full-width {
+    grid-column: span 2;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.field-label .required {
+    color: #dc2626;
+    font-size: 14px;
+}
+
+input, select, textarea { 
+    padding: 11px 14px; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 8px; 
+    width: 100%;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    color: #1e293b;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #94a3b8;
+}
+
+input:hover, select:hover, textarea:hover {
+    border-color: #cbd5e1;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+    background: white;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 28px;
+    border-top: 1px solid #e2e8f0;
+    background: #fafbfc;
+    border-radius: 0 0 16px 16px;
+    position: sticky;
+    bottom: 0;
+}
+
+
+.btn-submit {
+    padding: 10px 24px;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    background: #334155;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+    </style>
+</head>
+<body>
+    <!-- The rest of your HTML body remains unchanged -->
+    <div class="app-container">
+        <div class="top-nav">
+            <div class="logo-placeholder">
+                <i data-lucide="network" size="20"></i>
+            </div>
+            <div class="profile-icon">
+                <i data-lucide="user" size="20" style="color: #64748b;"></i>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <div class="content">
+                <div class="filter-bar">
+                    <div class="search-bar">
+                        <i data-lucide="search" size="18" class="search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search connections...">
+                    </div>
+                    
+                    <div class="filters-group">
+                        <select class="filter-select" id="sort-filter" onchange="sortConnections()">
+                            <option value="recent">Recently Added</option>
+                            <option value="rating-high">Rating: High to Low</option>
+                            <option value="rating-low">Rating: Low to High</option>
+                            <option value="name">Name: A-Z</option>
+                            <option value="last-contact">Last Contact</option>
+                        </select>
+                        
+                        <select class="filter-select" id="industry-filter" onchange="filterConnections()">
+                            <option value="all">All Industries</option>
+                        </select>
+                        
+                        <select class="filter-select" id="momentum-filter" onchange="filterConnections()">
+                            <option value="all">All Momentum</option>
+                            <option value="Improving">Improving</option>
+                            <option value="Stagnant">Stagnant</option>
+                            <option value="Declining">Declining</option>
+                        </select>
+                        
+                        <select class="filter-select" id="relationship-filter" onchange="filterConnections()">
+                            <option value="all">All Relationships</option>
+                            <option value="Inner Circle">Inner Circle</option>
+                            <option value="Professional">Professional</option>
+                            <option value="Lead">Lead</option>
+                        </select>
+                        
+                        <button class="add-btn" onclick="openModal()">
+                            <i data-lucide="plus" size="16"></i>
+                            Add
+                        </button>
+                    </div>
+                </div>
+
+                <div id="connections-list">
+                    {% for p in members %}
+                    <div class="connection-row" 
+                         data-industry="{{ p.industry }}" 
+                         data-momentum="{{ p.rating_momentum }}" 
+                         data-relationship="{{ p.relationship_status }}" 
+                         data-rating="{{ p.ai_rating }}" 
+                         data-contact="{{ p.days_since_contact }}"
+                         data-name="{{ p.full_name }}"
+                         onclick="toggleExpand(this)">
+                        <div class="connection-top">
+                            <div style="display: flex; gap: 20px; align-items: center; flex: 1;">
+                                <div class="connection-name">{{ p.full_name }}</div>
+                                <div style="color: #64748b; font-size: 14px;">{{ p.job_title }} @ {{ p.company }}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="connection-rating">
+                                    <div class="rating-circle">
+                                        <svg width="44" height="44" viewBox="0 0 44 44">
+                                            <circle class="rating-circle-bg" cx="22" cy="22" r="18" />
+                                            <circle class="rating-circle-fill" cx="22" cy="22" r="18" 
+                                                    stroke-dasharray="{{ (p.ai_rating * 11.31)|round(2) }} 113.1" />
+                                        </svg>
+                                        <span class="rating-number">{{ p.ai_rating }}</span>
+                                    </div>
+                                </div>
+                                <span class="momentum-badge momentum-{{ p.rating_momentum }}">
+                                    {% if p.rating_momentum == 'Improving' %}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                    {% elif p.rating_momentum == 'Declining' %}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                    {% else %}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    {% endif %}
+                                    {{ p.rating_momentum }}
+                                </span>
+                                <i data-lucide="chevron-down" class="expand-icon" size="20"></i>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                            {{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
+                        </div>
+                        <div class="connection-details">
+                            <div class="detail-grid">
+                                <div class="detail-item contact-item">
+                                    <span class="detail-label">
+                                        <i data-lucide="mail" size="12"></i>
+                                        Contact Info
+                                    </span>
+                                    <span class="detail-value">{{ p.contact_info or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item sector-item">
+                                    <span class="detail-label">
+                                        <i data-lucide="building-2" size="12"></i>
+                                        Sector
+                                    </span>
+                                    <span class="detail-value">{{ p.sector or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item skills-item">
+                                    <span class="detail-label">
+                                        <i data-lucide="award" size="12"></i>
+                                        Key Skills
+                                    </span>
+                                    <span class="detail-value">{{ p.skills_experience or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item mutual-item">
+                                    <span class="detail-label">
+                                        <i data-lucide="users-2" size="12"></i>
+                                        Mutual Connections
+                                    </span>
+                                    <span class="detail-value">{{ p.mutual_connections or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item accomplishments-item full-width">
+                                    <span class="detail-label">
+                                        <i data-lucide="trophy" size="12"></i>
+                                        Key Accomplishments
+                                    </span>
+                                    <span class="detail-value">{{ p.key_accomplishments or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item notes-item full-width">
+                                    <span class="detail-label">
+                                        <i data-lucide="sticky-note" size="12"></i>
+                                        Personal Notes
+                                    </span>
+                                    <span class="detail-value">{{ p.personal_notes or 'N/A' }}</span>
+                                </div>
+                                {% if p.ai_summary %}
+                                <div class="detail-item ai-summary-item full-width">
+                                    <span class="detail-label">
+                                        <i data-lucide="sparkles" size="12"></i>
+                                        AI Summary
+                                    </span>
+                                    <span class="detail-value">{{ p.ai_summary }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="ai-panel">
+                <div class="ai-header">
+                    <h3>AI Assistant</h3>
+                </div>
+                <div class="ai-messages" id="ai-chat">
+                    <div class="ai-msg">
+                        Hi! I can help you navigate your network. Try asking me:
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="quickQuery('Who should I reconnect with?')">Reconnect suggestions</button>
+                            <button class="quick-action-btn" onclick="quickQuery('Show improving connections')">Top performers</button>
+                            <button class="quick-action-btn" onclick="quickQuery('Who needs follow up?')">Follow-ups needed</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-input-container">
+                    <div class="ai-input-wrapper">
+                        <textarea id="ai-query" class="ai-input" placeholder="Ask about your network..." rows="1" onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); runAISearch(); }"></textarea>
+                        <button class="send-btn" onclick="runAISearch()" id="send-btn">
+                            <i data-lucide="send" size="18"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Connection</h3>
+                <button class="close-modal-btn" onclick="closeModal()">
+                    <i data-lucide="x" size="20"></i>
+                </button>
+            </div>
+            <form action="/add" method="POST" class="form-grid">
+                <input type="text" name="full_name" placeholder="Full Name" required>
+                <input type="text" name="contact_info" placeholder="Email / LinkedIn">
+                <input type="text" name="job_title" placeholder="Job Title">
+                <input type="text" name="company" placeholder="Company">
+                <input type="text" name="industry" placeholder="Industry">
+                <input type="text" name="sector" placeholder="Sector">
+                <input type="text" name="skills_experience" placeholder="Skills & Experience">
+                <input type="number" name="ai_rating" placeholder="Rating (1-10)" min="1" max="10" value="5">
+                <select name="rating_momentum">
+                    <option value="Improving">Improving</option>
+                    <option value="Stagnant">Stagnant</option>
+                    <option value="Declining">Declining</option>
+                </select>
+                <select name="relationship_status">
+                    <option value="Inner Circle">Inner Circle</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Lead">Lead</option>
+                </select>
+                <input type="number" name="days_since_contact" placeholder="Days Since Contact" value="0">
+                <input type="text" name="mutual_connections" placeholder="Mutual Connections">
+                <textarea name="key_accomplishments" class="full-width" placeholder="Key Accomplishments" rows="2"></textarea>
+                <textarea name="personal_notes" class="full-width" placeholder="Personal Notes" rows="2"></textarea>
+                <textarea name="ai_summary" class="full-width" placeholder="AI Summary (optional)" rows="2"></textarea>
+                <div class="full-width" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="submit" class="add-btn">Save Connection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        window.addEventListener('DOMContentLoaded', function() {
+            populateFilters();
+        });
+
+        function populateFilters() {
+            const rows = document.querySelectorAll('.connection-row');
+            const industries = new Set();
+            
+            rows.forEach(row => {
+                const industry = row.dataset.industry;
+                if (industry && industry !== 'None') {
+                    industries.add(industry);
+                }
+            });
+            
+            const industryFilter = document.getElementById('industry-filter');
+            industries.forEach(industry => {
+                const option = document.createElement('option');
+                option.value = industry;
+                option.textContent = industry;
+                industryFilter.appendChild(option);
+            });
+        }
+
+        function toggleExpand(row) {
+            const details = row.querySelector('.connection-details');
+            const icon = row.querySelector('.expand-icon');
+            const isExpanded = details.classList.contains('show');
+            
+            document.querySelectorAll('.connection-details.show').forEach(d => {
+                d.classList.remove('show');
+                d.closest('.connection-row').classList.remove('expanded');
+            });
+            document.querySelectorAll('.expand-icon.rotated').forEach(i => {
+                i.classList.remove('rotated');
+            });
+            
+            if (!isExpanded) {
+                details.classList.add('show');
+                row.classList.add('expanded');
+                icon.classList.add('rotated');
+            }
+            
+            lucide.createIcons();
+        }
+
+        function openModal() { 
+            document.getElementById('add-modal').classList.add('show');
+            lucide.createIcons();
+        }
+        
+        function closeModal() { 
+            document.getElementById('add-modal').classList.remove('show'); 
+        }
+
+        function quickQuery(query) {
+            document.getElementById('ai-query').value = query;
+            runAISearch();
+        }
+
+        async function runAISearch() {
+            const input = document.getElementById('ai-query');
+            const chat = document.getElementById('ai-chat');
+            const sendBtn = document.getElementById('send-btn');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const userMsg = document.createElement('div');
+            userMsg.className = 'user-msg';
+            userMsg.textContent = query;
+            chat.appendChild(userMsg);
+            input.value = "";
+
+            sendBtn.disabled = true;
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            chat.appendChild(typingDiv);
+            chat.scrollTop = chat.scrollHeight;
+
+            try {
+                const res = await fetch('/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, context: "Vertex General Session" })
+                });
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const data = await res.json();
+                typingDiv.remove();
+
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'ai-msg';
+
+                let text = data.answer || "No response received.";
+                text = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+
+                text = '<p>' + text + '</p>';
+                text = text.replace('<p></p>', '');
+
+                aiMsg.innerHTML = text;
+                chat.appendChild(aiMsg);
+
+            } catch (error) {
+                console.error(error);
+                typingDiv.remove();
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'ai-msg';
+                errorMsg.textContent = 'Error connecting to AI assistant.';
+                chat.appendChild(errorMsg);
+            }
+
+            sendBtn.disabled = false;
+            chat.scrollTop = chat.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function sortConnections() {
+            const sortValue = document.getElementById('sort-filter').value;
+            const container = document.getElementById('connections-list');
+            const rows = Array.from(container.querySelectorAll('.connection-row'));
+            
+            rows.sort((a, b) => {
+                switch(sortValue) {
+                    case 'rating-high':
+                        return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
+                    case 'rating-low':
+                        return parseInt(a.dataset.rating) - parseInt(b.dataset.rating);
+                    case 'name':
+                        return a.dataset.name.localeCompare(b.dataset.name);
+                    case 'last-contact':
+                        return parseInt(a.dataset.contact) - parseInt(b.dataset.contact);
+                    case 'recent':
+                    default:
+                        return 0;
+                }
+            });
+            
+            rows.forEach(row => container.appendChild(row));
+            lucide.createIcons();
+        }
+
+        function filterConnections() {
+            const industryValue = document.getElementById('industry-filter').value;
+            const momentumValue = document.getElementById('momentum-filter').value;
+            const relationshipValue = document.getElementById('relationship-filter').value;
+            
+            const rows = document.querySelectorAll('.connection-row');
+            
+            rows.forEach(row => {
+                const industry = row.dataset.industry;
+                const momentum = row.dataset.momentum;
+                const relationship = row.dataset.relationship;
+                
+                const industryMatch = industryValue === 'all' || industry === industryValue;
+                const momentumMatch = momentumValue === 'all' || momentum === momentumValue;
+                const relationshipMatch = relationshipValue === 'all' || relationship === relationshipValue;
+                
+                if (industryMatch && momentumMatch && relationshipMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
