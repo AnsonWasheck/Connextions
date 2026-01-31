@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Config:
     HF_TOKEN: str = "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"
     MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
-    DB_PATH: str = "database_two.db"
+    DB_PATH = r"C:\Users\Anson\Desktop\Backend\database\database_two.db"
     MAX_CANDIDATES: int = 8  # Reduced from 15
     MAX_RESPONSE_TOKENS: int = 250  # Reduced from 500
     CLASSIFICATION_TEMPERATURE: float = 0.1
