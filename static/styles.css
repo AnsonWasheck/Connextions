@@ -507,15 +507,36 @@ body {
 .connection-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;          /* changed from center → better name + subtitle alignment */
+    gap: 16px;
+}
+
+.connection-name-group {
+    flex: 1;
+    min-width: 0;                     /* allows it to shrink if needed */
 }
 
 .connection-name {
     font-weight: 700;
     font-size: 16px;
-    min-width: 180px;
     color: var(--text-primary);
     letter-spacing: -0.2px;
+    margin-bottom: 4px;               /* ← tight space before subtitle */
+    display: block;
+}
+
+/* New or adjust existing element that holds "Position @ Company" */
+.connection-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: block;
+    /* Optional: subtle truncation if very long company names */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;                 /* adjust to taste */
 }
 
 .connection-rating {
@@ -1221,3 +1242,17 @@ select {
         display: none;
     }
 }
+
+.detail-grid {
+    padding: 16px;                    /* ← added breathing room around cards */
+    margin: -16px;                    /* ← compensates so overall space stays same */
+    /* or use margin: -8px -12px; if you want asymmetric breathing room */
+}
+
+/* Optional – make hover lift less aggressive near edges */
+.detail-item:hover {
+    transform: translateY(-1px);      /* was -2px – smaller lift = less clipping risk */
+    /* or */
+    /* transform: translateY(-2px) scale(1.015); */  /* subtle grow instead of pure lift */
+}
+
