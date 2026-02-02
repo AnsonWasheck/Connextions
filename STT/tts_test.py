@@ -6,10 +6,13 @@ from huggingface_hub import InferenceClient
 import time
 import json
 import sqlite3
+import os
 
-# Settings from your Config
+# Settings
 class Config:
-    HF_TOKEN: str = "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"
+    # SECURITY: Replace this with your NEW token. 
+    # Best practice: use os.getenv("HF_TOKEN")
+    HF_TOKEN: str = "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" 
     MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
     DB_PATH = r"C:\Users\Anson\Desktop\Backend\database\database_two.db"
     FS = 16000 
@@ -20,11 +23,19 @@ class Config:
 client = InferenceClient(api_key=Config.HF_TOKEN)
 
 def save_to_db(data):
-    """Inserts categorized data into the database_two.db connections table."""
+    """Inserts categorized data into the database, handling list-to-string conversion."""
     try:
         conn = sqlite3.connect(Config.DB_PATH)
         cursor = conn.cursor()
         
+        # FIX: SQLite doesn't accept Python lists. 
+        # Convert any list values (like skills or connections) into comma-separated strings.
+        for key, value in data.items():
+            if isinstance(value, list):
+                data[key] = ", ".join(map(str, value))
+            elif value is None:
+                data[key] = "" # Handle nulls as empty strings for cleaner DB entries
+
         query = """
         INSERT INTO connections (
             full_name, contact_info, job_title, company, industry, sector,
@@ -33,7 +44,6 @@ def save_to_db(data):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         
-        # Mapping the JSON keys to the database columns
         values = (
             data.get('full_name'),
             data.get('contact_info'),
@@ -52,11 +62,12 @@ def save_to_db(data):
         cursor.execute(query, values)
         conn.commit()
         conn.close()
-        print(f"✅ Successfully saved {data.get('full_name')} to {Config.DB_PATH}")
+        print(f"✅ Successfully saved {data.get('full_name', 'Unknown')} to database.")
     except Exception as e:
         print(f"❌ Database Error: {e}")
 
 def record_audio():
+    """Handles the live audio recording via sounddevice."""
     print("\nReady! Type 'start' to begin recording.")
     cmd = input("> ").lower().strip()
     
@@ -64,8 +75,9 @@ def record_audio():
         print("\n🔴 RECORDING... (Press Ctrl+C to stop)")
         audio_data = []
         try:
-            def callback(indata, frames, time, status):
+            def callback(indata, frames, time_info, status):
                 audio_data.append(indata.copy())
+            
             with sd.InputStream(samplerate=Config.FS, channels=1, callback=callback):
                 while True:
                     time.sleep(0.1)
@@ -79,15 +91,20 @@ def record_audio():
     return False
 
 def process_and_categorize():
+    """Transcribes audio and uses LLM to structure the data."""
     # 1. Transcribe
-    print("🧠 Transcribing...")
-    model = whisper.load_model("base")
-    result = model.transcribe(Config.FILENAME, fp16=False)
-    raw_text = result["text"]
-    print(f"\n[TTS Output]: {raw_text}")
+    print("🧠 Transcribing audio...")
+    try:
+        model = whisper.load_model("base")
+        result = model.transcribe(Config.FILENAME, fp16=False)
+        raw_text = result["text"]
+        print(f"\n[Transcribed Text]: {raw_text}")
+    except Exception as e:
+        print(f"❌ Transcription Error: {e}")
+        return
 
-    # 2. Categorize with API
-    print(f"🏷️  Sorting text using {Config.MODEL}...")
+    # 2. Categorize with AI
+    print(f"🏷️  Extracting entities using {Config.MODEL}...")
     
     prompt = f"""
     Extract professional networking data from the text below. 
@@ -101,13 +118,13 @@ def process_and_categorize():
     - skills_experience
     - key_accomplishments
     - relationship_status
-    - days_since_contact (use an integer if mentioned, otherwise null)
+    - days_since_contact
     - mutual_connections
     - personal_notes
 
     Text: "{raw_text}"
     
-    Return ONLY the raw JSON object. Use null for missing values.
+    Return ONLY the raw JSON. If information is missing, use null.
     """
 
     try:
@@ -119,14 +136,17 @@ def process_and_categorize():
         )
         
         content = response.choices[0].message.content
+        # Clean potential markdown formatting from LLM response
         clean_json = content.replace("```json", "").replace("```", "").strip()
         structured_data = json.loads(clean_json)
 
         # 3. Save to Database
         save_to_db(structured_data)
 
+    except json.JSONDecodeError:
+        print("❌ Error: AI returned invalid JSON format.")
     except Exception as e:
-        print(f"❌ Process Error: {e}")
+        print(f"❌ Processing Error: {e}")
 
 if __name__ == "__main__":
     if record_audio():
