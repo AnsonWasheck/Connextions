@@ -17,8 +17,15 @@
             <div class="logo-placeholder">
                 <i data-lucide="network" size="20"></i>
             </div>
-            <div class="profile-icon">
-                <i data-lucide="user" size="20" style="color: #64748b;"></i>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Dark Mode Toggle Button -->
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                    <i data-lucide="sun" size="18" id="theme-icon-light"></i>
+                    <i data-lucide="moon" size="18" id="theme-icon-dark" style="display: none;"></i>
+                </button>
+                <div class="profile-icon">
+                    <i data-lucide="user" size="20" style="color: #64748b;"></i>
+                </div>
             </div>
         </div>
 
@@ -103,8 +110,7 @@
                                 <i data-lucide="chevron-down" class="expand-icon" size="20"></i>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
-                            {{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">{{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
                         </div>
                         <div class="connection-details">
                             <div class="detail-grid">
@@ -171,8 +177,7 @@
                     <h3>AI Assistant</h3>
                 </div>
                 <div class="ai-messages" id="ai-chat">
-                    <div class="ai-msg">
-                        Hi! I can help you navigate your network. Try asking me:
+                    <div class="ai-msg">Hi! I can help you navigate your network. Try asking me:
                         <div class="quick-actions">
                             <button class="quick-action-btn" onclick="quickQuery('Who should I reconnect with?')">Reconnect suggestions</button>
                             <button class="quick-action-btn" onclick="quickQuery('Show improving connections')">Top performers</button>
@@ -232,5 +237,48 @@
     </div>
 
     <script src="static/script.js"></script>
+    <script>
+        // Dark mode toggle function
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Toggle icons
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            
+            if (newTheme === 'dark') {
+                lightIcon.style.display = 'none';
+                darkIcon.style.display = 'block';
+            } else {
+                lightIcon.style.display = 'block';
+                darkIcon.style.display = 'none';
+            }
+            
+            // Re-initialize lucide icons
+            lucide.createIcons();
+        }
+        
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            
+            if (savedTheme === 'dark') {
+                lightIcon.style.display = 'none';
+                darkIcon.style.display = 'block';
+            }
+            
+            // Initialize lucide icons
+            lucide.createIcons();
+        });
+    </script>
 </body>
 </html>
