@@ -112,21 +112,18 @@
                         </div>
                         <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">{{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
                         </div>
+
+                        <!-- ─── EXPANDED DETAIL PANEL ─── -->
                         <div class="connection-details">
                             <div class="detail-grid">
+
+                                <!-- Row 1: Contact Info + Skills (unchanged) -->
                                 <div class="detail-item contact-item">
                                     <span class="detail-label">
                                         <i data-lucide="mail" size="12"></i>
                                         Contact Info
                                     </span>
                                     <span class="detail-value">{{ p.contact_info or 'N/A' }}</span>
-                                </div>
-                                <div class="detail-item sector-item">
-                                    <span class="detail-label">
-                                        <i data-lucide="building-2" size="12"></i>
-                                        Sector
-                                    </span>
-                                    <span class="detail-value">{{ p.sector or 'N/A' }}</span>
                                 </div>
                                 <div class="detail-item skills-item">
                                     <span class="detail-label">
@@ -135,13 +132,17 @@
                                     </span>
                                     <span class="detail-value">{{ p.skills_experience or 'N/A' }}</span>
                                 </div>
-                                <div class="detail-item mutual-item">
+
+                                <!-- Row 2: AI Summary (always shown) -->
+                                <div class="detail-item ai-summary-item full-width">
                                     <span class="detail-label">
-                                        <i data-lucide="users-2" size="12"></i>
-                                        Mutual Connections
+                                        <i data-lucide="sparkles" size="12"></i>
+                                        AI Summary
                                     </span>
-                                    <span class="detail-value">{{ p.mutual_connections or 'N/A' }}</span>
+                                    <span class="detail-value">{{ p.ai_summary or 'N/A' }}</span>
                                 </div>
+
+                                <!-- Row 3: Key Accomplishments (full-width, unchanged) -->
                                 <div class="detail-item accomplishments-item full-width">
                                     <span class="detail-label">
                                         <i data-lucide="trophy" size="12"></i>
@@ -149,6 +150,8 @@
                                     </span>
                                     <span class="detail-value">{{ p.key_accomplishments or 'N/A' }}</span>
                                 </div>
+
+                                <!-- Row 4: Personal Notes (full-width, unchanged) -->
                                 <div class="detail-item notes-item full-width">
                                     <span class="detail-label">
                                         <i data-lucide="sticky-note" size="12"></i>
@@ -156,15 +159,7 @@
                                     </span>
                                     <span class="detail-value">{{ p.personal_notes or 'N/A' }}</span>
                                 </div>
-                                {% if p.ai_summary %}
-                                <div class="detail-item ai-summary-item full-width">
-                                    <span class="detail-label">
-                                        <i data-lucide="sparkles" size="12"></i>
-                                        AI Summary
-                                    </span>
-                                    <span class="detail-value">{{ p.ai_summary }}</span>
-                                </div>
-                                {% endif %}
+
                             </div>
                         </div>
                     </div>
@@ -197,6 +192,7 @@
         </div>
     </div>
 
+    <!-- ─── ADD CONNECTION MODAL ─── -->
     <div class="modal-overlay" id="add-modal">
         <div class="modal">
             <div class="modal-header">
@@ -205,80 +201,116 @@
                     <i data-lucide="x" size="20"></i>
                 </button>
             </div>
-            <form action="/add" method="POST" class="form-grid">
-                <input type="text" name="full_name" placeholder="Full Name" required>
-                <input type="text" name="contact_info" placeholder="Email / LinkedIn">
-                <input type="text" name="job_title" placeholder="Job Title">
-                <input type="text" name="company" placeholder="Company">
-                <input type="text" name="industry" placeholder="Industry">
-                <input type="text" name="sector" placeholder="Sector">
-                <input type="text" name="skills_experience" placeholder="Skills & Experience">
-                <input type="number" name="ai_rating" placeholder="Rating (1-10)" min="1" max="10" value="5">
-                <select name="rating_momentum">
+
+            <!--
+                No <form> tag here anymore.
+                submitNewConnection() in script.js gathers the values,
+                POSTs them as FormData to /add, then hard-reloads the page
+                so Jinja re-renders with the fresh DB row.
+            -->
+            <div class="form-grid" id="add-form">
+                <input type="text"   id="f-full_name"            placeholder="Full Name"              required>
+                <input type="text"   id="f-contact_info"         placeholder="Email / LinkedIn">
+                <input type="text"   id="f-job_title"            placeholder="Job Title">
+                <input type="text"   id="f-company"              placeholder="Company">
+                <input type="text"   id="f-industry"             placeholder="Industry">
+                <input type="text"   id="f-sector"               placeholder="Sector">
+                <input type="text"   id="f-skills_experience"    placeholder="Skills &amp; Experience">
+                <input type="number" id="f-ai_rating"            placeholder="Rating (1-10)" min="1" max="10" value="5">
+                <select id="f-rating_momentum">
                     <option value="Improving">Improving</option>
                     <option value="Stagnant">Stagnant</option>
                     <option value="Declining">Declining</option>
                 </select>
-                <select name="relationship_status">
+                <select id="f-relationship_status">
                     <option value="Inner Circle">Inner Circle</option>
                     <option value="Professional">Professional</option>
                     <option value="Lead">Lead</option>
                 </select>
-                <input type="number" name="days_since_contact" placeholder="Days Since Contact" value="0">
-                <input type="text" name="mutual_connections" placeholder="Mutual Connections">
-                <textarea name="key_accomplishments" class="full-width" placeholder="Key Accomplishments" rows="2"></textarea>
-                <textarea name="personal_notes" class="full-width" placeholder="Personal Notes" rows="2"></textarea>
-                <textarea name="ai_summary" class="full-width" placeholder="AI Summary (optional)" rows="2"></textarea>
+                <input type="number" id="f-days_since_contact"   placeholder="Days Since Contact" value="0">
+                <input type="text"   id="f-mutual_connections"   placeholder="Mutual Connections">
+                <textarea id="f-key_accomplishments"  class="full-width" placeholder="Key Accomplishments" rows="2"></textarea>
+                <textarea id="f-personal_notes"      class="full-width" placeholder="Personal Notes"      rows="2"></textarea>
+                <textarea id="f-ai_summary"          class="full-width" placeholder="AI Summary (optional)" rows="2"></textarea>
                 <div class="full-width" style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="submit" class="add-btn">Save Connection</button>
+                    <button type="button" class="add-btn" onclick="submitNewConnection()">
+                        <i data-lucide="check" size="16"></i>
+                        Save Connection
+                    </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <script src="static/script.js"></script>
     <script>
-        // Dark mode toggle function
+        // ── Dark-mode toggle ────────────────────────────────
         function toggleTheme() {
             const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            
-            // Toggle icons
-            const lightIcon = document.getElementById('theme-icon-light');
-            const darkIcon = document.getElementById('theme-icon-dark');
-            
-            if (newTheme === 'dark') {
-                lightIcon.style.display = 'none';
-                darkIcon.style.display = 'block';
-            } else {
-                lightIcon.style.display = 'block';
-                darkIcon.style.display = 'none';
-            }
-            
-            // Re-initialize lucide icons
+
+            document.getElementById('theme-icon-light').style.display = newTheme === 'dark' ? 'none'  : 'block';
+            document.getElementById('theme-icon-dark').style.display  = newTheme === 'dark' ? 'block' : 'none';
             lucide.createIcons();
         }
-        
-        // Load saved theme on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            
-            const lightIcon = document.getElementById('theme-icon-light');
-            const darkIcon = document.getElementById('theme-icon-dark');
-            
-            if (savedTheme === 'dark') {
-                lightIcon.style.display = 'none';
-                darkIcon.style.display = 'block';
-            }
-            
-            // Initialize lucide icons
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.getElementById('theme-icon-light').style.display = saved === 'dark' ? 'none'  : 'block';
+            document.getElementById('theme-icon-dark').style.display  = saved === 'dark' ? 'block' : 'none';
             lucide.createIcons();
         });
+
+        // ── Submit handler – fetch POST then hard reload ────
+        async function submitNewConnection() {
+            // Quick validation: name is required
+            const nameEl = document.getElementById('f-full_name');
+            if (!nameEl.value.trim()) {
+                nameEl.style.borderColor = 'var(--danger)';
+                nameEl.focus();
+                return;
+            }
+
+            // Field-name → element-id mapping (matches what the original <form> sent)
+            const fields = [
+                'full_name', 'contact_info', 'job_title', 'company',
+                'industry', 'sector', 'skills_experience', 'ai_rating',
+                'rating_momentum', 'relationship_status', 'days_since_contact',
+                'mutual_connections', 'key_accomplishments', 'personal_notes', 'ai_summary'
+            ];
+
+            const formData = new FormData();
+            fields.forEach(name => {
+                formData.append(name, document.getElementById('f-' + name).value);
+            });
+
+            // Disable button to prevent double-submit
+            const btn = document.querySelector('#add-form .add-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+
+            try {
+                const res = await fetch('/add', {
+                    method: 'POST',
+                    body:   formData
+                });
+
+                if (!res.ok) throw new Error('Server responded ' + res.status);
+
+                // ✅ Success – hard reload so Jinja template re-renders with new row
+                window.location.reload();
+
+            } catch (err) {
+                console.error('Add connection failed:', err);
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                // Show a little inline error so the user knows something went wrong
+                alert('Something went wrong while saving. Check the console for details.');
+            }
+        }
     </script>
 </body>
 </html>

@@ -476,11 +476,15 @@ def get_all_people():
             "company": conn.get("company") or "Not specified",
             "industry": conn.get("industry") or "Not specified",
             "sector": conn.get("sector") or "Not specified",
+            "skills_experience": conn.get("skills_experience") or "",
             "ai_rating": conn.get("ai_rating") or 5,
+            "rating_momentum": conn.get("rating_momentum") or "Stagnant",
             "days_since_contact": conn.get("days_since_contact") or 0,
             "relationship_status": conn.get("relationship_status") or "Professional",
+            "mutual_connections": conn.get("mutual_connections") or "",
             "key_accomplishments": conn.get("key_accomplishments") or "",
-            "personal_notes": conn.get("personal_notes") or ""
+            "personal_notes": conn.get("personal_notes") or "",
+            "ai_summary": conn.get("ai_summary") or ""
         }
         for conn in connections
     ]
