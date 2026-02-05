@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connextions — Connect Beyond</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cerulean-dark: #003d5c;
+            --navy-deep: #001a2e;
+            --cerulean-glow: #0066a1;
+            --text-glow: rgba(0, 102, 161, 0.4);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            width: 100%;
+            min-height: 100vh;
+            background: #000000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Ultra-Fluid Canvas Background */
+        #fluid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Film Grain - More Subtle */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            width: 200%;
+            height: 200%;
+            background: transparent url('data:image/svg+xml,%3Csvg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.02"/%3E%3C/svg%3E') repeat;
+            pointer-events: none;
+            animation: grain 6s steps(8) infinite;
+            z-index: 100;
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes grain {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -10%); }
+            30% { transform: translate(7%, -25%); }
+            50% { transform: translate(-15%, 10%); }
+            70% { transform: translate(0%, 15%); }
+            90% { transform: translate(-10%, 10%); }
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            perspective: 1000px;
+        }
+
+        /* Main Logo/Title */
+        .connextions-logo {
+            font-size: clamp(4rem, 12vw, 10rem);
+            font-weight: 200;
+            letter-spacing: 0.2em;
+            color: #ffffff;
+            text-transform: uppercase;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 0.5s;
+            text-shadow: 
+                0 0 30px rgba(255, 255, 255, 0.1),
+                0 0 60px rgba(0, 102, 161, 0.15);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Tagline */
+        .tagline {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 2rem;
+            opacity: 0;
+            animation: fadeInUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 1s;
+            text-transform: uppercase;
+        }
+
+        /* CTA Button */
+        .cta-button {
+            margin-top: 4rem;
+            padding: 1.2rem 3rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #ffffff;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            opacity: 0;
+            animation: fadeInUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 1.5s;
+            z-index: 1;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 102, 161, 0.3), transparent);
+            transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .cta-button:hover {
+            border-color: rgba(0, 102, 161, 0.6);
+            box-shadow: 0 0 40px rgba(0, 102, 161, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        /* Content Section */
+        .content-section {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 8rem 2rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 4rem;
+            margin-top: 6rem;
+        }
+
+        .feature-card {
+            padding: 3rem 2rem;
+            background: rgba(0, 29, 46, 0.3);
+            border: 1px solid rgba(0, 102, 161, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .feature-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0, 102, 161, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 102, 161, 0.15);
+            transform: translateY(-8px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 200;
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .section-header.visible {
+            animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.1em;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .section-subtitle.visible {
+            animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 0.2s;
+        }
+
+        /* Footer */
+        footer {
+            position: relative;
+            z-index: 10;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 8rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: rgba(0, 102, 161, 0.8);
+        }
+
+        .copyright {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 300;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards, scrollBounce 2s ease-in-out infinite;
+            animation-delay: 2s, 2s;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes scrollBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(10px); }
+        }
+
+        /* Vignette */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Cursor Glow */
+        .cursor-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 102, 161, 0.08) 0%, transparent 70%);
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .connextions-logo {
+                font-size: clamp(2.5rem, 10vw, 6rem);
+                letter-spacing: 0.15em;
+            }
+
+            .content-grid {
+                gap: 2rem;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Ultra-Fluid Canvas Background -->
+    <canvas id="fluid-canvas"></canvas>
+
+    <!-- Cursor Glow -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <!-- Vignette -->
+    <div class="vignette"></div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1 class="connextions-logo">CONNEXTIONS</h1>
+        <p class="tagline">Connect Beyond Boundaries</p>
+        <button class="cta-button">Explore More</button>
+        <div class="scroll-indicator"></div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="content-section">
+        <h2 class="section-header">What We Offer</h2>
+        <p class="section-subtitle">Experience the next generation of connectivity</p>
+        
+        <div class="content-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Lightning Fast</h3>
+                <p class="feature-description">Experience unprecedented speed and performance with our cutting-edge infrastructure designed for the modern era.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Secure by Design</h3>
+                <p class="feature-description">Enterprise-grade security protocols protect your data with military-level encryption and advanced threat detection.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Global Reach</h3>
+                <p class="feature-description">Connect with anyone, anywhere in the world through our distributed network spanning across six continents.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#" class="footer-link">About</a>
+                <a href="#" class="footer-link">Features</a>
+                <a href="#" class="footer-link">Pricing</a>
+                <a href="#" class="footer-link">Contact</a>
+            </div>
+            <p class="copyright">© 2024 Connextions. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Ultra-Fluid Canvas Animation
+        const canvas = document.getElementById('fluid-canvas');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        
+        let width, height;
+        let time = 0;
+        
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Fluid Blob Class
+        class FluidBlob {
+            constructor(x, y, radius, color, speed, phase) {
+                this.baseX = x;
+                this.baseY = y;
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.speed = speed;
+                this.phase = phase;
+                this.angle = Math.random() * Math.PI * 2;
+            }
+
+            update(time, mouseX, mouseY) {
+                // Organic movement
+                this.x = this.baseX + Math.sin(time * this.speed + this.phase) * 150;
+                this.y = this.baseY + Math.cos(time * this.speed * 0.7 + this.phase) * 150;
+                
+                // Mouse interaction
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 300) {
+                    const force = (300 - distance) / 300;
+                    this.x -= dx * force * 0.1;
+                    this.y -= dy * force * 0.1;
+                }
+                
+                // Breathing effect
+                const breathe = Math.sin(time * this.speed * 2 + this.phase) * 0.15 + 1;
+                this.currentRadius = this.radius * breathe;
+            }
+
+            draw() {
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.currentRadius
+                );
+                
+                gradient.addColorStop(0, this.color.replace(')', ', 0.4)').replace('rgb', 'rgba'));
+                gradient.addColorStop(0.5, this.color.replace(')', ', 0.2)').replace('rgb', 'rgba'));
+                gradient.addColorStop(1, this.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Create fluid blobs
+        const blobs = [
+            new FluidBlob(width * 0.3, height * 0.3, 300, 'rgb(0, 61, 92)', 0.0008, 0),
+            new FluidBlob(width * 0.7, height * 0.6, 350, 'rgb(0, 26, 46)', 0.0006, Math.PI / 3),
+            new FluidBlob(width * 0.5, height * 0.5, 400, 'rgb(0, 40, 71)', 0.0007, Math.PI / 2),
+            new FluidBlob(width * 0.2, height * 0.7, 280, 'rgb(0, 70, 105)', 0.0009, Math.PI),
+            new FluidBlob(width * 0.8, height * 0.3, 320, 'rgb(0, 50, 82)', 0.00065, Math.PI * 1.5),
+        ];
+
+        // Mouse tracking
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+        let targetMouseX = mouseX;
+        let targetMouseY = mouseY;
+
+        document.addEventListener('mousemove', (e) => {
+            targetMouseX = e.clientX;
+            targetMouseY = e.clientY;
+        });
+
+        // Smooth mouse following
+        function updateMouse() {
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+        }
+
+        // Animation loop
+        function animate() {
+            time += 0.5;
+            
+            // Clear with slight fade for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Apply blur filter
+            ctx.filter = 'blur(60px)';
+            
+            updateMouse();
+            
+            blobs.forEach(blob => {
+                blob.update(time, mouseX, mouseY);
+                blob.draw();
+            });
+            
+            ctx.filter = 'none';
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Cursor glow follow
+        const cursorGlow = document.getElementById('cursorGlow');
+        let glowX = 0, glowY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            glowX = e.clientX;
+            glowY = e.clientY;
+            cursorGlow.style.opacity = '1';
+        });
+
+        function animateCursorGlow() {
+            cursorGlow.style.left = `${glowX - 200}px`;
+            cursorGlow.style.top = `${glowY - 200}px`;
+            requestAnimationFrame(animateCursorGlow);
+        }
+        animateCursorGlow();
+
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements
+        document.querySelectorAll('.feature-card, .section-header, .section-subtitle').forEach(el => {
+            observer.observe(el);
+        });
+
+        // CTA Button click
+        document.querySelector('.cta-button').addEventListener('click', () => {
+            document.querySelector('.content-section').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        });
+
+        // Resize handler for blobs
+        window.addEventListener('resize', () => {
+            blobs.forEach((blob, index) => {
+                blob.baseX = width * [0.3, 0.7, 0.5, 0.2, 0.8][index];
+                blob.baseY = height * [0.3, 0.6, 0.5, 0.7, 0.3][index];
+            });
+        });
+    </script>
+</body>
+</html>
