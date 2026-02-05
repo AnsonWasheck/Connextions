@@ -1,5 +1,7 @@
 # Connextions
 
+getconnextions.com
+
 **Connextions** is a human-centered AI tool for managing real professional relationships. It helps users remember, understand, and grow their network without turning it into a social feed.
 
 This project explores how AI can support one-on-one professional relationships through memory, context, and semantic understanding — not likes, followers, or public profiles.
