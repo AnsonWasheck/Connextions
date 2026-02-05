@@ -1,6 +1,6 @@
 # Connextions
 
-getconnextions.com
+[getconnextions.com](getconnextions.com)
 
 **Connextions** is a human-centered AI tool for managing real professional relationships. It helps users remember, understand, and grow their network without turning it into a social feed.
 
