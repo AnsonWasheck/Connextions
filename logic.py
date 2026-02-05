@@ -466,25 +466,29 @@ def get_all_connections() -> List[Dict]:
     return [vars(conn) for conn in connections]
 
 def get_all_people():
-    connections = get_all_connections()
+    """
+    Returns list of dicts that perfectly match what the Jinja template expects.
+    """
+    connections = _system.db_manager.get_all_connections()
+    
     return [
         {
-            "id": conn.get("id"),
-            "full_name": conn.get("full_name") or "Unnamed",
-            "contact_info": conn.get("contact_info") or "",
-            "job_title": conn.get("job_title") or "Not specified",
-            "company": conn.get("company") or "Not specified",
-            "industry": conn.get("industry") or "Not specified",
-            "sector": conn.get("sector") or "Not specified",
-            "skills_experience": conn.get("skills_experience") or "",
-            "ai_rating": conn.get("ai_rating") or 5,
-            "rating_momentum": conn.get("rating_momentum") or "Stagnant",
-            "days_since_contact": conn.get("days_since_contact") or 0,
-            "relationship_status": conn.get("relationship_status") or "Professional",
-            "mutual_connections": conn.get("mutual_connections") or "",
-            "key_accomplishments": conn.get("key_accomplishments") or "",
-            "personal_notes": conn.get("personal_notes") or "",
-            "ai_summary": conn.get("ai_summary") or ""
+            "id": conn.id,
+            "full_name": conn.full_name or "Unnamed",
+            "contact_info": conn.contact_info or "",
+            "job_title": conn.job_title or "Not specified",
+            "company": conn.company or "Not specified",
+            "industry": conn.industry or "Not specified",
+            "sector": conn.sector or "Not specified",          # kept even if not used in card
+            "skills_experience": conn.skills_experience or "",
+            "ai_rating": conn.ai_rating or 5,
+            "rating_momentum": conn.rating_momentum or "Stagnant",
+            "days_since_contact": conn.days_since_contact or 0,
+            "relationship_status": conn.relationship_status or "Professional",
+            "mutual_connections": conn.mutual_connections or "",
+            "key_accomplishments": conn.key_accomplishments or "",
+            "personal_notes": conn.personal_notes or "",
+            "ai_summary": conn.ai_summary or ""
         }
         for conn in connections
     ]

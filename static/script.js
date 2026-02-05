@@ -171,4 +171,71 @@ function filterConnections() {
             row.style.display = 'none';
         }
     });
+        // ── Dark-mode toggle ────────────────────────────────
+        function toggleTheme() {
+            const html = document.documentElement;
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            document.getElementById('theme-icon-light').style.display = newTheme === 'dark' ? 'none'  : 'block';
+            document.getElementById('theme-icon-dark').style.display  = newTheme === 'dark' ? 'block' : 'none';
+            lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.getElementById('theme-icon-light').style.display = saved === 'dark' ? 'none'  : 'block';
+            document.getElementById('theme-icon-dark').style.display  = saved === 'dark' ? 'block' : 'none';
+            lucide.createIcons();
+        });
+
+        // ── Submit handler – fetch POST then hard reload ────
+        async function submitNewConnection() {
+            // Quick validation: name is required
+            const nameEl = document.getElementById('f-full_name');
+            if (!nameEl.value.trim()) {
+                nameEl.style.borderColor = 'var(--danger)';
+                nameEl.focus();
+                return;
+            }
+
+            // Field-name → element-id mapping (matches what the original <form> sent)
+            const fields = [
+                'full_name', 'contact_info', 'job_title', 'company',
+                'industry', 'sector', 'skills_experience', 'ai_rating',
+                'rating_momentum', 'relationship_status', 'days_since_contact',
+                'mutual_connections', 'key_accomplishments', 'personal_notes', 'ai_summary'
+            ];
+
+            const formData = new FormData();
+            fields.forEach(name => {
+                formData.append(name, document.getElementById('f-' + name).value);
+            });
+
+            // Disable button to prevent double-submit
+            const btn = document.querySelector('#add-form .add-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+
+            try {
+                const res = await fetch('/add', {
+                    method: 'POST',
+                    body:   formData
+                });
+
+                if (!res.ok) throw new Error('Server responded ' + res.status);
+
+                // ✅ Success – hard reload so Jinja template re-renders with new row
+                window.location.reload();
+
+            } catch (err) {
+                console.error('Add connection failed:', err);
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                // Show a little inline error so the user knows something went wrong
+                alert('Something went wrong while saving. Check the console for details.');
+            }
+        }
 }
