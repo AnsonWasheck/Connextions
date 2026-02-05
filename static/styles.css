@@ -1256,3 +1256,206 @@ select {
     /* transform: translateY(-2px) scale(1.015); */  /* subtle grow instead of pure lift */
 }
 
+/* ── Authentication Pages ──────────────────────────────────────── */
+
+.auth-page-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    padding: 40px 20px;
+    position: relative;
+}
+
+.auth-card {
+    background: var(--bg-primary);
+    border-radius: 20px;
+    border: 1px solid var(--border-primary);
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    max-width: 460px;
+    overflow: hidden;
+    animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-header {
+    text-align: center;
+    padding: 40px 32px 24px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    letter-spacing: -0.6px;
+    color: var(--text-primary);
+}
+
+.auth-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.auth-form {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-footer {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 16px;
+}
+
+.auth-link {
+    color: var(--accent-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+    color: var(--accent-hover);
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 12px 0;
+}
+
+.auth-divider span {
+    padding: 0 16px;
+    background: var(--bg-primary);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.forgot-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.btn-social {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-social:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-secondary);
+    transform: translateY(-1px);
+}
+
+.auth-toggle {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+}
+
+/* Slightly larger inputs on auth pages */
+.auth-form input {
+    padding: 14px 16px;
+    font-size: 15px;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        margin: 0 16px;
+    }
+    .auth-header {
+        padding: 32px 24px 20px;
+    }
+    .auth-form {
+        padding: 24px;
+    }
+}
+.profile-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--gradient-primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;           /* important for <a> */
+}
+
+.profile-icon:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-hover);
+}
+
+.profile-icon:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Optional: logged-in state (different icon or initial) */
+.profile-icon.logged-in {
+    background: var(--purple);
+    font-size: 16px;
+    font-weight: 700;
+}

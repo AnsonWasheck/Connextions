@@ -33,6 +33,10 @@ def search():
         return jsonify({"answer": "Sorry, something went wrong on the server side."}), 500
 
 
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
 @app.route('/add', methods=['POST'])
 def add():
     try:
@@ -53,6 +57,7 @@ def add():
             "mutual_connections":  request.form.get('mutual_connections'),
             "personal_notes":      request.form.get('personal_notes')
         }
+        
 
         logic.add_person(person_data)
         flash("Connection added successfully!", "success")   # nice feedback
