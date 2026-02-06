@@ -1,6 +1,6 @@
 """
 Professional AI-Powered Connection Management System
-Refined for concise, actionable responses.
+Updated for multi-user support
 """
 
 import sqlite3
@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 class Config:
     HF_TOKEN: str = "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"
     MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
-    DB_PATH = r"C:\Users\Anson\Desktop\Backend\database\database_two.db"
-    MAX_CANDIDATES: int = 8  # Reduced from 15
-    MAX_RESPONSE_TOKENS: int = 250  # Reduced from 500
+    DB_PATH = "database_two.db"
+    MAX_CANDIDATES: int = 8
+    MAX_RESPONSE_TOKENS: int = 250
     CLASSIFICATION_TEMPERATURE: float = 0.1
-    RESPONSE_TEMPERATURE: float = 0.6  # Slightly lower for more focused responses
+    RESPONSE_TEMPERATURE: float = 0.6
 
 
 class QueryCategory(Enum):
@@ -44,6 +44,7 @@ class QueryCategory(Enum):
 @dataclass
 class Connection:
     id: Optional[int]
+    user_id: Optional[int]
     full_name: str
     contact_info: Optional[str]
     job_title: Optional[str]
@@ -64,6 +65,7 @@ class Connection:
     def from_dict(cls, data: Dict) -> 'Connection':
         return cls(
             id=data.get('id'),
+            user_id=data.get('user_id'),
             full_name=data.get('full_name', ''),
             contact_info=data.get('contact_info'),
             job_title=data.get('job_title'),
@@ -96,7 +98,7 @@ class Connection:
 
 
 # ============================================================================
-# DATABASE LAYER
+# DATABASE LAYER - UPDATED FOR MULTI-USER
 # ============================================================================
 
 class DatabaseManager:
@@ -118,7 +120,24 @@ class DatabaseManager:
             if conn:
                 conn.close()
     
+    def get_user_connections(self, user_id: int) -> List[Connection]:
+        """Get all connections for a specific user"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT * FROM connections 
+                    WHERE user_id = ?
+                    ORDER BY ai_rating DESC, days_since_contact ASC
+                """, (user_id,))
+                rows = cursor.fetchall()
+                return [Connection.from_dict(dict(row)) for row in rows]
+        except Exception as e:
+            logger.error(f"Error fetching connections for user {user_id}: {e}")
+            return []
+    
     def get_all_connections(self) -> List[Connection]:
+        """Legacy method - gets all connections (no user filter)"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -132,18 +151,20 @@ class DatabaseManager:
             logger.error(f"Error fetching connections: {e}")
             return []
     
-    def add_connection(self, connection: Connection) -> bool:
+    def add_connection(self, connection: Connection, user_id: int) -> bool:
+        """Add a connection for a specific user"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO connections (
-                        full_name, contact_info, job_title, company, industry, 
+                        user_id, full_name, contact_info, job_title, company, industry, 
                         sector, skills_experience, ai_summary, ai_rating, 
                         rating_momentum, key_accomplishments, relationship_status,
                         days_since_contact, mutual_connections, personal_notes
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
+                    user_id,
                     connection.full_name, connection.contact_info, 
                     connection.job_title, connection.company, connection.industry,
                     connection.sector, connection.skills_experience, 
@@ -153,7 +174,7 @@ class DatabaseManager:
                     connection.mutual_connections, connection.personal_notes
                 ))
                 conn.commit()
-                logger.info(f"Successfully added connection: {connection.full_name}")
+                logger.info(f"Successfully added connection for user {user_id}: {connection.full_name}")
                 return True
         except Exception as e:
             logger.error(f"Error adding connection: {e}")
@@ -161,7 +182,7 @@ class DatabaseManager:
 
 
 # ============================================================================
-# AI SERVICES - REFINED FOR CONCISE RESPONSES
+# AI SERVICES
 # ============================================================================
 
 class AIService:
@@ -217,10 +238,8 @@ Return only the category name."""
         if not candidates:
             return self._generate_empty_response(query)
         
-        # Build concise context (top 5 only)
         context = self._build_candidate_context(candidates[:5])
         
-        # Streamlined system prompts
         system_prompts = {
             QueryCategory.SUMMARY_INSIGHTS: 
                 "You're a network advisor. Provide brief, insightful analysis of connections. Keep it under 100 words.",
@@ -271,7 +290,6 @@ Response:"""
             return "Unable to generate response. Please try rephrasing your query."
     
     def _build_candidate_context(self, candidates: List[Connection]) -> str:
-        """Build minimal context for top candidates"""
         lines = []
         for i, c in enumerate(candidates, 1):
             lines.append(
@@ -282,7 +300,6 @@ Response:"""
         return "\n".join(lines)
     
     def _get_word_limit(self, category: QueryCategory) -> int:
-        """Category-specific word limits"""
         limits = {
             QueryCategory.SUMMARY_INSIGHTS: 100,
             QueryCategory.RECOMMENDATIONS: 120,
@@ -293,7 +310,6 @@ Response:"""
         return limits.get(category, 100)
     
     def _get_category_instruction(self, category: QueryCategory) -> str:
-        """Concise instructions per category"""
         instructions = {
             QueryCategory.SUMMARY_INSIGHTS: 
                 "Provide key insights about this connection's value and relationship status.",
@@ -410,7 +426,7 @@ class ConnectionSearchEngine:
 
 
 # ============================================================================
-# MAIN ORCHESTRATION
+# MAIN ORCHESTRATION - UPDATED FOR MULTI-USER
 # ============================================================================
 
 class ConnectionIntelligenceSystem:
@@ -420,14 +436,16 @@ class ConnectionIntelligenceSystem:
         self.ai_service = AIService()
         self.search_engine = ConnectionSearchEngine()
     
-    def process_query(self, query: str) -> str:
+    def process_query(self, query: str, user_id: int) -> str:
+        """Process AI query for a specific user"""
         
         if not query or len(query.strip()) < 3:
             return "Please provide a more specific query."
         
-        logger.info(f"Processing query: {query}")
+        logger.info(f"Processing query for user {user_id}: {query}")
         
-        all_connections = self.db_manager.get_all_connections()
+        # Get connections only for this user
+        all_connections = self.db_manager.get_user_connections(user_id)
         
         if not all_connections:
             return """Your network is empty. Add connections to get started with AI-powered insights."""
@@ -445,71 +463,25 @@ class ConnectionIntelligenceSystem:
 
 
 # ============================================================================
-# PUBLIC API
+# PUBLIC API - UPDATED FOR MULTI-USER
 # ============================================================================
 
 _system = ConnectionIntelligenceSystem()
 
-def process_ai_query(query: str) -> str:
-    return _system.process_query(query)
+def process_ai_query(query: str, user_id: int) -> str:
+    """Process AI query for a specific user"""
+    return _system.process_query(query, user_id)
 
-def add_connection(data: Dict) -> bool:
+def add_connection(data: Dict, user_id: int) -> bool:
+    """Add connection for a specific user"""
     try:
         connection = Connection.from_dict(data)
-        return _system.db_manager.add_connection(connection)
+        return _system.db_manager.add_connection(connection, user_id)
     except Exception as e:
         logger.error(f"Error adding connection: {e}")
         return False
 
-def get_all_connections() -> List[Dict]:
-    connections = _system.db_manager.get_all_connections()
+def get_user_connections(user_id: int) -> List[Dict]:
+    """Get all connections for a specific user"""
+    connections = _system.db_manager.get_user_connections(user_id)
     return [vars(conn) for conn in connections]
-
-def get_all_people():
-    """
-    Returns list of dicts that perfectly match what the Jinja template expects.
-    """
-    connections = _system.db_manager.get_all_connections()
-    
-    return [
-        {
-            "id": conn.id,
-            "full_name": conn.full_name or "Unnamed",
-            "contact_info": conn.contact_info or "",
-            "job_title": conn.job_title or "Not specified",
-            "company": conn.company or "Not specified",
-            "industry": conn.industry or "Not specified",
-            "sector": conn.sector or "Not specified",          # kept even if not used in card
-            "skills_experience": conn.skills_experience or "",
-            "ai_rating": conn.ai_rating or 5,
-            "rating_momentum": conn.rating_momentum or "Stagnant",
-            "days_since_contact": conn.days_since_contact or 0,
-            "relationship_status": conn.relationship_status or "Professional",
-            "mutual_connections": conn.mutual_connections or "",
-            "key_accomplishments": conn.key_accomplishments or "",
-            "personal_notes": conn.personal_notes or "",
-            "ai_summary": conn.ai_summary or ""
-        }
-        for conn in connections
-    ]
-
-def add_person(data: dict):
-    cleaned_data = {
-        "id": None,
-        "full_name": data.get("full_name", "").strip(),
-        "contact_info": data.get("contact_info"),
-        "job_title": data.get("job_title"),
-        "company": data.get("company"),
-        "industry": data.get("industry"),
-        "sector": data.get("sector"),
-        "skills_experience": data.get("skills_experience"),
-        "ai_summary": data.get("ai_summary"),
-        "ai_rating": int(data.get("ai_rating", 5)) if data.get("ai_rating") else 5,
-        "rating_momentum": data.get("rating_momentum"),
-        "key_accomplishments": data.get("key_accomplishments"),
-        "relationship_status": data.get("relationship_status"),
-        "days_since_contact": int(data.get("days_since_contact", 0)),
-        "mutual_connections": data.get("mutual_connections"),
-        "personal_notes": data.get("personal_notes")
-    }
-    return add_connection(cleaned_data)
