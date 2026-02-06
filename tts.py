@@ -1,32 +1,44 @@
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 import whisper
-import sounddevice as sd
 import numpy as np
 from scipy.io.wavfile import write
 from huggingface_hub import InferenceClient
-import time
 import json
 import sqlite3
 import os
-from typing import Dict, Any, Optional
+import base64
+import io
+import wave
+from typing import Dict, Any
+
+app = Flask(__name__)
+CORS(app)
 
 # Settings
 class Config:
     HF_TOKEN: str = "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" 
     MODEL: str = "Qwen/Qwen2.5-7B-Instruct"
-    DB_PATH = r"C:\Users\Anson\Desktop\Backend\database\database_two.db"
+    DB_PATH = "database_two.db"
     FS = 16000 
-    FILENAME = "live_recording.wav"
     MAX_RESPONSE_TOKENS: int = 1000
     TEMPERATURE: float = 0.1
-    EXTRACTION_TEMPERATURE: float = 0.05  # Lower for more deterministic extraction
+    EXTRACTION_TEMPERATURE: float = 0.05
 
 client = InferenceClient(api_key=Config.HF_TOKEN)
+whisper_model = None
 
+def load_whisper_model():
+    """Load Whisper model on startup"""
+    global whisper_model
+    if whisper_model is None:
+        print("Loading Whisper model...")
+        whisper_model = whisper.load_model("base")
+    return whisper_model
 
 def validate_and_clean_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Validates extracted data and ensures proper formatting."""
     
-    # Define expected types and defaults
     schema = {
         'full_name': (str, ""),
         'contact_info': (str, ""),
@@ -46,17 +58,14 @@ def validate_and_clean_data(data: Dict[str, Any]) -> Dict[str, Any]:
     for key, (expected_type, default) in schema.items():
         value = data.get(key)
         
-        # Handle None or missing values
         if value is None or value == "null" or value == "":
             cleaned[key] = default
             continue
             
-        # Handle lists (convert to comma-separated string)
         if isinstance(value, list):
             cleaned[key] = ", ".join(str(v) for v in value if v)
             continue
             
-        # Type conversion
         try:
             if expected_type == int:
                 cleaned[key] = int(value) if str(value).isdigit() else default
@@ -67,15 +76,10 @@ def validate_and_clean_data(data: Dict[str, Any]) -> Dict[str, Any]:
     
     return cleaned
 
-
 def extract_structured_data(raw_text: str) -> Dict[str, Any]:
-    """
-    Multi-stage extraction with precise field definitions and examples.
-    Uses detailed prompting to guide the LLM toward accurate categorization.
-    """
+    """Multi-stage extraction with precise field definitions"""
     print(f"🏷️  Extracting entities using {Config.MODEL}...")
     
-    # Stage 1: Detailed extraction with explicit field definitions
     extract_prompt = f"""You are a professional data extraction assistant. Extract networking information from the transcribed speech below and categorize it precisely.
 
 TRANSCRIBED TEXT:
@@ -145,37 +149,25 @@ OUTPUT FORMAT:
         
         content = response.choices[0].message.content.strip()
         
-        # Clean JSON extraction
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
             content = content.split("```")[1].split("```")[0].strip()
         
         structured_data = json.loads(content)
-        
-        # Validate and clean
         cleaned_data = validate_and_clean_data(structured_data)
-        
-        print("\n✅ Extracted Data:")
-        for key, value in cleaned_data.items():
-            print(f"   {key}: {value}")
         
         return cleaned_data
         
     except json.JSONDecodeError as e:
         print(f"❌ JSON Parsing Error: {e}")
-        print(f"Raw response: {content[:500]}")
         return None
     except Exception as e:
         print(f"❌ Extraction Error: {e}")
         return None
 
-
 def generate_ai_analysis(data: Dict[str, Any]) -> Dict[str, str]:
-    """
-    Generates a professional summary and strict 1-10 business rating.
-    Uses comprehensive criteria for precise, consistent ratings.
-    """
+    """Generates a professional summary and strict 1-10 business rating"""
     print("\n📊 Generating AI Summary and Rating...")
     
     analysis_prompt = f"""You are a strategic business analyst. Rate this connection honestly and precisely on a 1-10 scale. Do NOT default to the middle. Use the FULL range. Map the person directly to the score that fits them.
@@ -226,26 +218,18 @@ Return ONLY valid JSON:
         
         content = response.choices[0].message.content.strip()
         
-        # Clean JSON
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
             content = content.split("```")[1].split("```")[0].strip()
         
         analysis = json.loads(content)
-        
-        # Enforce constraints
         analysis['rating_momentum'] = "Stagnant"
         
-        # Validate rating is 1-10
         rating = analysis.get('ai_rating', 5)
         if not isinstance(rating, int) or rating < 1 or rating > 10:
             print(f"⚠️ Invalid rating {rating}, defaulting to 5")
             analysis['ai_rating'] = 5
-        
-        print(f"\n✅ AI Analysis Complete:")
-        print(f"   Rating: {analysis['ai_rating']}/10")
-        print(f"   Summary: {analysis['ai_summary']}")
         
         return analysis
         
@@ -257,9 +241,8 @@ Return ONLY valid JSON:
             "rating_momentum": "Stagnant"
         }
 
-
 def save_to_db(data: Dict[str, Any]) -> None:
-    """Inserts categorized data and AI analysis into the database."""
+    """Inserts categorized data and AI analysis into the database"""
     try:
         conn = sqlite3.connect(Config.DB_PATH)
         cursor = conn.cursor()
@@ -295,89 +278,126 @@ def save_to_db(data: Dict[str, Any]) -> None:
         conn.commit()
         conn.close()
         
-        print(f"\n✅ Successfully saved {data.get('full_name', 'Unknown')} to database.")
+        print(f"✅ Successfully saved {data.get('full_name', 'Unknown')} to database.")
         
     except Exception as e:
         print(f"❌ Database Error: {e}")
+        raise
 
+# Serve the frontend HTML
+@app.route('/')
+def index():
+    """Serve the main HTML page"""
+    return send_from_directory('.', 'index.html')
 
-def record_audio() -> bool:
-    """Handles the live audio recording via sounddevice."""
-    print("\n" + "="*60)
-    print("🎙️  AUDIO RECORDING SYSTEM")
-    print("="*60)
-    print("\nReady to record! Type 'start' to begin recording.")
-    print("Press Ctrl+C when finished speaking.\n")
-    
-    cmd = input("> ").lower().strip()
-    
-    if cmd == "start":
-        print("\n🔴 RECORDING IN PROGRESS...")
-        print("Speak clearly. Press Ctrl+C when done.\n")
-        
-        audio_data = []
-        try:
-            def callback(indata, frames, time_info, status):
-                audio_data.append(indata.copy())
-            
-            with sd.InputStream(samplerate=Config.FS, channels=1, callback=callback):
-                while True:
-                    time.sleep(0.1)
-                    
-        except KeyboardInterrupt:
-            print("\n🛑 Recording stopped.")
-            
-        if audio_data:
-            full_audio = np.concatenate(audio_data, axis=0)
-            write(Config.FILENAME, Config.FS, full_audio)
-            print(f"✅ Audio saved to {Config.FILENAME}")
-            return True
-    
-    return False
-
-
-def process_and_categorize() -> None:
-    """Transcribes audio and uses LLM to structure and analyze the data."""
-    
-    print("\n" + "="*60)
-    print("🧠 TRANSCRIPTION & ANALYSIS")
-    print("="*60 + "\n")
-    
-    # Transcribe audio
-    print("🎧 Transcribing audio with Whisper...")
+@app.route('/api/process-audio', methods=['POST'])
+def process_audio():
+    """Endpoint to receive audio data and process it"""
     try:
-        model = whisper.load_model("base")
-        result = model.transcribe(Config.FILENAME, fp16=False)
+        # Get audio data from request
+        audio_data = request.json.get('audio')
+        
+        if not audio_data:
+            return jsonify({'error': 'No audio data provided'}), 400
+        
+        # Decode base64 audio
+        audio_bytes = base64.b64decode(audio_data.split(',')[1] if ',' in audio_data else audio_data)
+        
+        # Save temporarily
+        temp_filename = 'temp_recording.wav'
+        with open(temp_filename, 'wb') as f:
+            f.write(audio_bytes)
+        
+        # Transcribe
+        model = load_whisper_model()
+        result = model.transcribe(temp_filename, fp16=False)
         raw_text = result["text"].strip()
         
-        print(f"\n📝 TRANSCRIBED TEXT:")
-        print("-" * 60)
-        print(f"{raw_text}")
-        print("-" * 60)
+        print(f"Transcribed: {raw_text}")
+        
+        # Extract structured data
+        structured_data = extract_structured_data(raw_text)
+        
+        if structured_data is None:
+            return jsonify({'error': 'Failed to extract structured data'}), 500
+        
+        # Generate AI analysis
+        analysis_results = generate_ai_analysis(structured_data)
+        structured_data.update(analysis_results)
+        
+        # Save to database
+        save_to_db(structured_data)
+        
+        # Clean up temp file
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+        
+        return jsonify({
+            'success': True,
+            'transcription': raw_text,
+            'data': structured_data
+        })
         
     except Exception as e:
-        print(f"❌ Transcription Error: {e}")
-        return
+        print(f"Error processing audio: {e}")
+        return jsonify({'error': str(e)}), 500
 
-    # Extract structured data
-    structured_data = extract_structured_data(raw_text)
+@app.route('/api/connections', methods=['GET'])
+def get_connections():
+    """Endpoint to retrieve all connections from database"""
+    try:
+        conn = sqlite3.connect(Config.DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM connections ORDER BY id DESC")
+        rows = cursor.fetchall()
+        
+        connections = [dict(row) for row in rows]
+        conn.close()
+        
+        return jsonify(connections)
+        
+    except Exception as e:
+        print(f"Error fetching connections: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'ok'})
+
+if __name__ == '__main__':
+    # Initialize database if it doesn't exist
+    if not os.path.exists(Config.DB_PATH):
+        print("Creating database...")
+        conn = sqlite3.connect(Config.DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS connections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT,
+            contact_info TEXT,
+            job_title TEXT,
+            company TEXT,
+            industry TEXT,
+            sector TEXT,
+            skills_experience TEXT,
+            key_accomplishments TEXT,
+            relationship_status TEXT,
+            days_since_contact INTEGER,
+            mutual_connections TEXT,
+            personal_notes TEXT,
+            ai_summary TEXT,
+            ai_rating INTEGER,
+            rating_momentum TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+        
+        conn.commit()
+        conn.close()
+        print("✅ Database created!")
     
-    if structured_data is None:
-        print("❌ Failed to extract structured data. Aborting.")
-        return
-
-    # Generate AI analysis
-    analysis_results = generate_ai_analysis(structured_data)
-    structured_data.update(analysis_results)
-
-    # Save to database
-    save_to_db(structured_data)
-    
-    print("\n" + "="*60)
-    print("✅ PROCESSING COMPLETE")
-    print("="*60 + "\n")
-
-
-if __name__ == "__main__":
-    if record_audio():
-        process_and_categorize()
+    app.run(debug=True, host='0.0.0.0', port=5000)

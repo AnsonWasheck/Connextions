@@ -11,7 +11,7 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'  # Change this to any random string
 
-DB_PATH = "database_two.db"
+DB_PATH = r"database/database_two.db"
 
 # ============================================================================
 # DATABASE HELPERS
