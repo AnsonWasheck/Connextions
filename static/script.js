@@ -258,6 +258,125 @@ async function submitNewConnection() {
     }
 }
 
+// ─── MODAL & TABS ───────────────────────────────────────────────────
+
+function openModal() {
+    document.getElementById('add-modal').style.display = 'flex';
+    switchTab('voice'); // you can change to 'manual' if preferred
+}
+
+function closeModal() {
+    document.getElementById('add-modal').style.display = 'none';
+    resetVoiceUI();
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+    if (tab === 'manual') {
+        document.getElementById('tab-manual').style.display = 'block';
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+    } else {
+        document.getElementById('tab-voice').style.display = 'block';
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+    }
+}
+
+// ─── VOICE RECORDING ────────────────────────────────────────────────
+
+let mediaRecorder = null;
+let audioChunks = [];
+
+function resetVoiceUI() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+    }
+    audioChunks = [];
+    document.getElementById('voice-status').textContent = "Click \"Start\" and describe the person you just met...";
+    document.getElementById('voice-result').textContent = "";
+    document.getElementById('btn-start-record').style.display = 'inline-block';
+    document.getElementById('btn-stop-record').style.display = 'none';
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+
+            reader.onloadend = async function() {
+                const base64data = reader.result;
+
+                document.getElementById('voice-status').textContent = "Processing audio...";
+                document.getElementById('btn-start-record').style.display = 'none';
+                document.getElementById('btn-stop-record').style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/process-audio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: base64data })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.error || 'Failed to process audio');
+                    }
+
+                    const name = result.data.full_name || 'New contact';
+                    const rating = result.data.ai_rating;
+                    const summary = result.data.ai_summary || '';
+
+                    document.getElementById('voice-result').innerHTML =
+                        `Added <strong>${name}</strong><br>` +
+                        `Rating: ${rating}/10<br>` +
+                        `<small>${summary.substring(0, 120)}${summary.length > 120 ? '...' : ''}</small>`;
+
+                    // Auto refresh after success
+                    setTimeout(() => location.reload(), 2200);
+
+                } catch (err) {
+                    document.getElementById('voice-result').textContent = "Error: " + err.message;
+                    document.getElementById('voice-status').textContent = "Failed — try again?";
+                }
+            };
+
+            reader.readAsDataURL(blob);
+        };
+
+        mediaRecorder.start();
+        document.getElementById('voice-status').textContent = "Recording... Speak clearly!";
+        document.getElementById('btn-start-record').style.display = 'none';
+        document.getElementById('btn-stop-record').style.display = 'inline-block';
+
+    } catch (err) {
+        alert("Cannot access microphone.\n" + err.message);
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+}
+
+// ─── EVENT LISTENERS ────────────────────────────────────────────────
+
+document.getElementById('btn-start-record')?.addEventListener('click', startRecording);
+document.getElementById('btn-stop-record')?.addEventListener('click', stopRecording);
+
+// Your existing functions: submitNewConnection(), toggleExpand(), etc. remain below...
+
 // ── Initialize everything when DOM is ready ───────────────────────
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();

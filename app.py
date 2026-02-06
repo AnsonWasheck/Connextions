@@ -1,34 +1,42 @@
-"""
-Flask app with multi-user support
-Simple session-based authentication (no encryption for local use)
-"""
-
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, send_from_directory
+from flask_cors import CORS
+import whisper
+import json
 import sqlite3
 import os
+import base64
+import time
 from datetime import datetime
+from huggingface_hub import InferenceClient
+from typing import Dict, Any
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this'  # Change this to any random string
+app.secret_key = 'super-secret-key-change-this-in-production-1234567890'
+CORS(app)
 
-DB_PATH = r"database/database_two.db"
+# ─── Configuration ──────────────────────────────────────────────────────────────
+class Config:
+    HF_TOKEN = "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"
+    MODEL = "Qwen/Qwen2.5-7B-Instruct"
+    DB_PATH = r"database/database_two.db"           # ← make sure folder exists
+    MAX_RESPONSE_TOKENS = 1000
+    TEMPERATURE = 0.1
+    EXTRACTION_TEMPERATURE = 0.05
 
-# ============================================================================
-# DATABASE HELPERS
-# ============================================================================
+client = InferenceClient(api_key=Config.HF_TOKEN)
+whisper_model = None
 
+# ─── Database Helpers ───────────────────────────────────────────────────────────
 def get_db():
-    """Get database connection"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(Config.DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    """Initialize database with required tables"""
     conn = get_db()
     cursor = conn.cursor()
-    
-    # Create users table
+
+    # Users table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,12 +48,12 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
-    
-    # Create connections table with user_id from the start
+
+    # Connections table – user-specific
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS connections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        user_id INTEGER NOT NULL,
         full_name TEXT,
         contact_info TEXT,
         job_title TEXT,
@@ -53,135 +61,190 @@ def init_db():
         industry TEXT,
         sector TEXT,
         skills_experience TEXT,
-        ai_summary TEXT,
-        ai_rating INTEGER DEFAULT 5,
-        rating_momentum TEXT DEFAULT 'Stagnant',
         key_accomplishments TEXT,
         relationship_status TEXT DEFAULT 'Professional',
         days_since_contact INTEGER DEFAULT 0,
         mutual_connections TEXT,
         personal_notes TEXT,
+        ai_summary TEXT,
+        ai_rating INTEGER DEFAULT 5,
+        rating_momentum TEXT DEFAULT 'Stagnant',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )
     ''')
-    
-    # Create index for faster lookups
-    cursor.execute('''
-    CREATE INDEX IF NOT EXISTS idx_connections_user_id 
-    ON connections(user_id)
-    ''')
-    
+
     conn.commit()
     conn.close()
 
-# ============================================================================
-# AUTHENTICATION HELPERS
-# ============================================================================
-
+# ─── Auth Helpers ───────────────────────────────────────────────────────────────
 def get_current_user_id():
-    """Get the current logged-in user's ID from session"""
     return session.get('user_id')
 
 def is_logged_in():
-    """Check if user is logged in"""
     return 'user_id' in session
 
 def login_required(f):
-    """Decorator to require login for routes"""
     from functools import wraps
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated(*args, **kwargs):
         if not is_logged_in():
             return redirect(url_for('login'))
         return f(*args, **kwargs)
-    return decorated_function
+    return decorated
 
-# ============================================================================
-# USER MANAGEMENT
-# ============================================================================
+# ─── Whisper & AI Helpers ───────────────────────────────────────────────────────
+def load_whisper_model():
+    global whisper_model
+    if whisper_model is None:
+        print("Loading Whisper base model...")
+        whisper_model = whisper.load_model("base")
+    return whisper_model
 
-def create_user(email, password, first_name, last_name, company):
-    """Create a new user"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
+def validate_and_clean_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    schema = {
+        'full_name': (str, ""),
+        'contact_info': (str, ""),
+        'job_title': (str, ""),
+        'company': (str, ""),
+        'industry': (str, ""),
+        'sector': (str, ""),
+        'skills_experience': (str, ""),
+        'key_accomplishments': (str, ""),
+        'relationship_status': (str, "Professional"),
+        'days_since_contact': (int, 0),
+        'mutual_connections': (str, ""),
+        'personal_notes': (str, "")
+    }
+
+    cleaned = {}
+    for key, (typ, default) in schema.items():
+        val = data.get(key)
+        if val in (None, "null", ""):
+            cleaned[key] = default
+            continue
+        if isinstance(val, list):
+            cleaned[key] = ", ".join(str(v) for v in val if v)
+            continue
+        try:
+            cleaned[key] = int(val) if typ == int else str(val).strip()
+        except:
+            cleaned[key] = default
+    return cleaned
+
+def extract_structured_data(raw_text: str) -> Dict | None:
+    print(f"Extracting from: {raw_text[:80]}...")
+
+    prompt = f"""You are a professional data extraction assistant.
+Extract networking / contact information from the following spoken text.
+Return **only** valid JSON. Use null for missing fields. Do not add explanations.
+
+TRANSCRIBED TEXT:
+"{raw_text}"
+
+Fields to extract (exact keys):
+{{
+  "full_name": str,
+  "contact_info": str,
+  "job_title": str,
+  "company": str,
+  "industry": str,
+  "sector": str,
+  "skills_experience": str,
+  "key_accomplishments": str,
+  "relationship_status": str,
+  "days_since_contact": int,
+  "mutual_connections": str,
+  "personal_notes": str
+}}
+
+Rules:
+- Only extract what is explicitly said
+- Do not guess or infer
+- relationship_status: one of "New Contact", "Professional", "Close Colleague", "Strategic Partner", etc.
+- Return pure JSON only
+"""
+
     try:
-        cursor.execute('''
-            INSERT INTO users (email, password, first_name, last_name, company)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (email, password, first_name, last_name, company))
-        conn.commit()
-        user_id = cursor.lastrowid
-        conn.close()
-        return user_id
-    except sqlite3.IntegrityError:
-        conn.close()
+        resp = client.chat.completions.create(
+            model=Config.MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=Config.MAX_RESPONSE_TOKENS,
+            temperature=Config.EXTRACTION_TEMPERATURE
+        )
+        content = resp.choices[0].message.content.strip()
+
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+
+        data = json.loads(content)
+        return validate_and_clean_data(data)
+
+    except Exception as e:
+        print(f"Extraction failed: {e}")
         return None
 
-def authenticate_user(email, password):
-    """Authenticate user and return user_id if successful"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT id FROM users WHERE email = ? AND password = ?', (email, password))
-    user = cursor.fetchone()
-    conn.close()
-    
-    return user['id'] if user else None
+def generate_ai_analysis(data: Dict) -> Dict:
+    prompt = f"""You are a strategic business network analyst.
+Rate this contact on a 1-10 scale based only on the provided data.
+Be honest — use the full range.
 
-# ============================================================================
-# CONNECTION MANAGEMENT (USER-SPECIFIC)
-# ============================================================================
+Data:
+- Name: {data.get('full_name', 'N/A')}
+- Title: {data.get('job_title', 'N/A')} @ {data.get('company', 'N/A')}
+- Industry: {data.get('industry', 'N/A')} / {data.get('sector', 'N/A')}
+- Skills: {data.get('skills_experience', 'N/A')}
+- Accomplishments: {data.get('key_accomplishments', 'N/A')}
+- Notes: {data.get('personal_notes', 'N/A')}
 
-def get_user_connections(user_id):
-    """Get all connections for a specific user"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT * FROM connections 
-        WHERE user_id = ?
-        ORDER BY ai_rating DESC, days_since_contact ASC
-    ''', (user_id,))
-    
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return [
-        {
-            "id": row['id'],
-            "full_name": row['full_name'] or "Unnamed",
-            "contact_info": row['contact_info'] or "",
-            "job_title": row['job_title'] or "Not specified",
-            "company": row['company'] or "Not specified",
-            "industry": row['industry'] or "Not specified",
-            "sector": row['sector'] or "Not specified",
-            "skills_experience": row['skills_experience'] or "",
-            "ai_rating": row['ai_rating'] or 5,
-            "rating_momentum": row['rating_momentum'] or "Stagnant",
-            "days_since_contact": row['days_since_contact'] or 0,
-            "relationship_status": row['relationship_status'] or "Professional",
-            "mutual_connections": row['mutual_connections'] or "",
-            "key_accomplishments": row['key_accomplishments'] or "",
-            "personal_notes": row['personal_notes'] or "",
-            "ai_summary": row['ai_summary'] or ""
+Return only JSON:
+{{
+  "ai_summary": "Two sentence summary of value",
+  "ai_rating": int,
+  "rating_momentum": "Stagnant"
+}}
+"""
+
+    try:
+        resp = client.chat.completions.create(
+            model=Config.MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+            temperature=0.1
+        )
+        content = resp.choices[0].message.content.strip()
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        analysis = json.loads(content)
+
+        rating = analysis.get('ai_rating', 5)
+        if not isinstance(rating, int) or rating < 1 or rating > 10:
+            analysis['ai_rating'] = 5
+
+        analysis['rating_momentum'] = "Stagnant"
+        return analysis
+
+    except Exception as e:
+        print(f"Analysis failed: {e}")
+        return {
+            "ai_summary": "Could not generate summary.",
+            "ai_rating": 5,
+            "rating_momentum": "Stagnant"
         }
-        for row in rows
-    ]
 
-def add_user_connection(user_id, data):
-    """Add a connection for a specific user"""
+def save_connection(user_id: int, data: Dict):
     conn = get_db()
     cursor = conn.cursor()
-    
     try:
         cursor.execute('''
-            INSERT INTO connections (
-                user_id, full_name, contact_info, job_title, company, industry,
-                sector, skills_experience, ai_summary, ai_rating,
-                rating_momentum, key_accomplishments, relationship_status,
-                days_since_contact, mutual_connections, personal_notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO connections (
+            user_id, full_name, contact_info, job_title, company, industry, sector,
+            skills_experience, key_accomplishments, relationship_status,
+            days_since_contact, mutual_connections, personal_notes,
+            ai_summary, ai_rating, rating_momentum
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             user_id,
             data.get('full_name'),
@@ -191,111 +254,153 @@ def add_user_connection(user_id, data):
             data.get('industry'),
             data.get('sector'),
             data.get('skills_experience'),
-            data.get('ai_summary'),
-            int(data.get('ai_rating', 5)),
-            data.get('rating_momentum'),
             data.get('key_accomplishments'),
             data.get('relationship_status'),
-            int(data.get('days_since_contact', 0)),
+            data.get('days_since_contact'),
             data.get('mutual_connections'),
-            data.get('personal_notes')
+            data.get('personal_notes'),
+            data.get('ai_summary'),
+            data.get('ai_rating'),
+            data.get('rating_momentum')
         ))
         conn.commit()
+    finally:
         conn.close()
-        return True
-    except Exception as e:
-        print(f"Error adding connection: {e}")
-        conn.close()
-        return False
 
-# ============================================================================
-# ROUTES - AUTHENTICATION
-# ============================================================================
+# ─── Routes ─────────────────────────────────────────────────────────────────────
+
+@app.route('/')
+@login_required
+def index():
+    user_id = get_current_user_id()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM connections WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+    members = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return render_template('index.html', members=members)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
-        user_id = authenticate_user(email, password)
-        
-        if user_id:
-            session['user_id'] = user_id
+
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ? AND password = ?", (email, password))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            session['user_id'] = user['id']
             session['email'] = email
             return redirect(url_for('index'))
         else:
-            return render_template('login.html', error="Invalid email or password")
-    
+            return render_template('login.html', error="Invalid credentials")
+
     return render_template('login.html')
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    first_name = request.form.get('first_name')
-    last_name = request.form.get('last_name')
-    company = request.form.get('company')
-    
-    user_id = create_user(email, password, first_name, last_name, company)
-    
-    if user_id:
-        session['user_id'] = user_id
-        session['email'] = email
-        return redirect(url_for('index'))
-    else:
-        return render_template('login.html', error="Email already exists")
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        first_name = request.form.get('first_name', '')
+        last_name = request.form.get('last_name', '')
+        company = request.form.get('company', '')
+
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+            INSERT INTO users (email, password, first_name, last_name, company)
+            VALUES (?, ?, ?, ?, ?)
+            ''', (email, password, first_name, last_name, company))
+            user_id = cursor.lastrowid
+            conn.commit()
+            session['user_id'] = user_id
+            session['email'] = email
+            return redirect(url_for('index'))
+        except sqlite3.IntegrityError:
+            return render_template('register.html', error="Email already exists")
+        finally:
+            conn.close()
+
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ============================================================================
-# ROUTES - MAIN APP
-# ============================================================================
-
-@app.route('/')
+@app.route('/api/process-audio', methods=['POST'])
 @login_required
-def index():
-    user_id = get_current_user_id()
-    connections = get_user_connections(user_id)
-    return render_template('index.html', members=connections)
+def process_audio():
+    try:
+        payload = request.json
+        audio_data_url = payload.get('audio')
+        if not audio_data_url or not audio_data_url.startswith('data:audio/'):
+            return jsonify({'error': 'Invalid audio data'}), 400
 
-@app.route('/add', methods=['POST'])
+        header, encoded = audio_data_url.split(',', 1)
+        mime = header.split(';')[0].replace('data:', '')
+        audio_bytes = base64.b64decode(encoded)
+
+        ext = mime.split('/')[-1] if '/' in mime else 'webm'
+        temp_file = f"temp_{int(time.time()*1000)}.{ext}"
+        with open(temp_file, 'wb') as f:
+            f.write(audio_bytes)
+
+        # Transcribe
+        model = load_whisper_model()
+        result = model.transcribe(temp_file, fp16=False)
+        raw_text = result["text"].strip()
+
+        os.remove(temp_file)
+
+        if not raw_text:
+            return jsonify({'error': 'No speech detected'}), 400
+
+        # Extract & analyze
+        structured = extract_structured_data(raw_text)
+        if not structured:
+            return jsonify({'error': 'Could not extract data'}), 500
+
+        analysis = generate_ai_analysis(structured)
+        structured.update(analysis)
+
+        # Save to current user
+        user_id = get_current_user_id()
+        save_connection(user_id, structured)
+
+        return jsonify({
+            'success': True,
+            'transcription': raw_text,
+            'data': structured
+        })
+
+    except Exception as e:
+        print(f"Audio processing error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/connections', methods=['GET'])
 @login_required
-def add_connection():
+def get_connections():
     user_id = get_current_user_id()
-    data = request.form.to_dict()
-    
-    success = add_user_connection(user_id, data)
-    
-    if success:
-        return redirect(url_for('index'))
-    else:
-        return "Error adding connection", 500
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM connections WHERE user_id = ? ORDER BY id DESC", (user_id,))
+    rows = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return jsonify(rows)
 
-@app.route('/ai_search', methods=['POST'])
-@login_required
-def ai_search():
-    """Handle AI query with user-specific connection filtering"""
-    from ai_backend import process_ai_query
-    
-    user_id = get_current_user_id()
-    query = request.json.get('query', '')
-    
-    if not query:
-        return jsonify({"response": "Please ask a question about your network."})
-    
-    # Process AI query with user-specific connections
-    response = process_ai_query(query, user_id)
-    
-    return jsonify({"response": response})
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'ok'})
 
-# ============================================================================
-# APP INITIALIZATION
-# ============================================================================
-
+# ─── Startup ────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
+    os.makedirs(os.path.dirname(Config.DB_PATH), exist_ok=True)
     init_db()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

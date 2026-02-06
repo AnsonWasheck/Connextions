@@ -112,14 +112,15 @@
                                 <i data-lucide="chevron-down" class="expand-icon" size="20"></i>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">{{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                            {{ p.industry }} • {{ p.relationship_status }} • Last contacted {{ p.days_since_contact }} days ago
                         </div>
 
                         <!-- ─── EXPANDED DETAIL PANEL ─── -->
                         <div class="connection-details">
                             <div class="detail-grid">
 
-                                <!-- Row 1: Contact Info + Skills (unchanged) -->
+                                <!-- Row 1: Contact Info + Skills -->
                                 <div class="detail-item contact-item">
                                     <span class="detail-label">
                                         <i data-lucide="mail" size="12"></i>
@@ -135,7 +136,7 @@
                                     <span class="detail-value">{{ p.skills_experience or 'N/A' }}</span>
                                 </div>
 
-                                <!-- Row 2: AI Summary (always shown) -->
+                                <!-- Row 2: AI Summary -->
                                 <div class="detail-item ai-summary-item full-width">
                                     <span class="detail-label">
                                         <i data-lucide="sparkles" size="12"></i>
@@ -144,7 +145,7 @@
                                     <span class="detail-value">{{ p.ai_summary or 'N/A' }}</span>
                                 </div>
 
-                                <!-- Row 3: Key Accomplishments (full-width, unchanged) -->
+                                <!-- Row 3: Key Accomplishments -->
                                 <div class="detail-item accomplishments-item full-width">
                                     <span class="detail-label">
                                         <i data-lucide="trophy" size="12"></i>
@@ -153,7 +154,7 @@
                                     <span class="detail-value">{{ p.key_accomplishments or 'N/A' }}</span>
                                 </div>
 
-                                <!-- Row 4: Personal Notes (full-width, unchanged) -->
+                                <!-- Row 4: Personal Notes -->
                                 <div class="detail-item notes-item full-width">
                                     <span class="detail-label">
                                         <i data-lucide="sticky-note" size="12"></i>
@@ -196,7 +197,7 @@
 
     <!-- ─── ADD CONNECTION MODAL ─── -->
     <div class="modal-overlay" id="add-modal">
-        <div class="modal">
+        <div class="modal" style="max-width: 520px;">
             <div class="modal-header">
                 <h3>Add Connection</h3>
                 <button class="close-modal-btn" onclick="closeModal()">
@@ -204,42 +205,64 @@
                 </button>
             </div>
 
-            <!--
-                No <form> tag here anymore.
-                submitNewConnection() in script.js gathers the values,
-                POSTs them as FormData to /add, then hard-reloads the page
-                so Jinja re-renders with the fresh DB row.
-            -->
-            <div class="form-grid" id="add-form">
-                <input type="text"   id="f-full_name"            placeholder="Full Name"              required>
-                <input type="text"   id="f-contact_info"         placeholder="Email / LinkedIn">
-                <input type="text"   id="f-job_title"            placeholder="Job Title">
-                <input type="text"   id="f-company"              placeholder="Company">
-                <input type="text"   id="f-industry"             placeholder="Industry">
-                <input type="text"   id="f-sector"               placeholder="Sector">
-                <input type="text"   id="f-skills_experience"    placeholder="Skills &amp; Experience">
-                <input type="number" id="f-ai_rating"            placeholder="Rating (1-10)" min="1" max="10" value="5">
-                <select id="f-rating_momentum">
-                    <option value="Improving">Improving</option>
-                    <option value="Stagnant">Stagnant</option>
-                    <option value="Declining">Declining</option>
-                </select>
-                <select id="f-relationship_status">
-                    <option value="Inner Circle">Inner Circle</option>
-                    <option value="Professional">Professional</option>
-                    <option value="Lead">Lead</option>
-                </select>
-                <input type="number" id="f-days_since_contact"   placeholder="Days Since Contact" value="0">
-                <input type="text"   id="f-mutual_connections"   placeholder="Mutual Connections">
-                <textarea id="f-key_accomplishments"  class="full-width" placeholder="Key Accomplishments" rows="2"></textarea>
-                <textarea id="f-personal_notes"      class="full-width" placeholder="Personal Notes"      rows="2"></textarea>
-                <textarea id="f-ai_summary"          class="full-width" placeholder="AI Summary (optional)" rows="2"></textarea>
-                <div class="full-width" style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="add-btn" onclick="submitNewConnection()">
-                        <i data-lucide="check" size="16"></i>
-                        Save Connection
+            <!-- Tabs: Manual / Voice -->
+            <div class="modal-tabs" style="display: flex; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                <button class="tab-btn active" onclick="switchTab('manual')">Manual Entry</button>
+                <button class="tab-btn" onclick="switchTab('voice')">Voice Note</button>
+            </div>
+
+            <!-- Manual Entry Tab -->
+            <div id="tab-manual" class="tab-content" style="display: block;">
+                <div class="form-grid" id="add-form">
+                    <input type="text"   id="f-full_name"            placeholder="Full Name"              required>
+                    <input type="text"   id="f-contact_info"         placeholder="Email / LinkedIn / Phone">
+                    <input type="text"   id="f-job_title"            placeholder="Job Title">
+                    <input type="text"   id="f-company"              placeholder="Company">
+                    <input type="text"   id="f-industry"             placeholder="Industry">
+                    <input type="text"   id="f-sector"               placeholder="Sector">
+                    <input type="text"   id="f-skills_experience"    placeholder="Skills & Experience">
+                    <input type="number" id="f-ai_rating"            placeholder="Rating (1-10)" min="1" max="10" value="5">
+                    <select id="f-rating_momentum">
+                        <option value="Improving">Improving</option>
+                        <option value="Stagnant">Stagnant</option>
+                        <option value="Declining">Declining</option>
+                    </select>
+                    <select id="f-relationship_status">
+                        <option value="Inner Circle">Inner Circle</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Lead">Lead</option>
+                    </select>
+                    <input type="number" id="f-days_since_contact"   placeholder="Days Since Last Contact" value="0">
+                    <input type="text"   id="f-mutual_connections"   placeholder="Mutual Connections">
+                    <textarea id="f-key_accomplishments" class="full-width" placeholder="Key Accomplishments" rows="2"></textarea>
+                    <textarea id="f-personal_notes"      class="full-width" placeholder="Personal Notes"      rows="2"></textarea>
+                    <textarea id="f-ai_summary"          class="full-width" placeholder="AI Summary (optional)" rows="2"></textarea>
+
+                    <div class="full-width" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+                        <button type="button" class="add-btn" onclick="submitNewConnection()">
+                            <i data-lucide="check" size="16"></i>
+                            Save Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Note Tab -->
+            <div id="tab-voice" class="tab-content" style="display: none; text-align: center; padding: 24px 0;">
+                <div id="voice-status" style="font-size: 1.1rem; margin-bottom: 24px; min-height: 1.6em; color: #334155;">
+                    Click "Start" and tell me about the person you just met...
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <button id="btn-start-record" class="add-btn" style="padding: 14px 40px; font-size: 1.1rem;">
+                        <i data-lucide="mic" size="20"></i> Start Recording
+                    </button>
+                    <button id="btn-stop-record" class="add-btn" style="display: none; background: #ef4444; padding: 14px 40px; font-size: 1.1rem;">
+                        <i data-lucide="square" size="20"></i> Stop & Process
                     </button>
                 </div>
+
+                <div id="voice-result" style="margin-top: 20px; font-size: 0.95rem; color: #64748b; max-width: 420px; margin-left: auto; margin-right: auto; line-height: 1.5;"></div>
             </div>
         </div>
     </div>
