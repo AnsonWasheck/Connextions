@@ -370,6 +370,12 @@ function stopRecording() {
     }
 }
 
+// ── Open Profile in New Tab ───────────────────────────────────────
+function openProfile(personId) {
+    // Open the profile page in a new tab
+    window.open(`/profile/${personId}`, '_blank');
+}
+
 // ─── EVENT LISTENERS ────────────────────────────────────────────────
 
 document.getElementById('btn-start-record')?.addEventListener('click', startRecording);

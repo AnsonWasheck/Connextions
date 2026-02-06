@@ -18,7 +18,7 @@ CORS(app)
 class Config:
     HF_TOKEN = "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"
     MODEL = "Qwen/Qwen2.5-7B-Instruct"
-    DB_PATH = r"database/database_two.db"           # ← make sure folder exists
+    DB_PATH = r"database/database_two.db"
     MAX_RESPONSE_TOKENS = 1000
     TEMPERATURE = 0.1
     EXTRACTION_TEMPERATURE = 0.05
@@ -36,7 +36,6 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Users table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +48,6 @@ def init_db():
     )
     ''')
 
-    # Connections table – user-specific
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS connections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -334,6 +332,173 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/profile/<person_id>')
+@login_required
+def profile_view(person_id):
+    user_id = get_current_user_id()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM connections WHERE id = ? AND user_id = ?", (person_id, user_id))
+    person = cursor.fetchone()
+    conn.close()
+    
+    if not person:
+        return "Connection not found", 404
+    
+    return render_template('profile.html', person=dict(person))
+
+@app.route('/update/<person_id>', methods=['POST'])
+@login_required
+def update_person(person_id):
+    user_id = get_current_user_id()
+    try:
+        data = request.get_json()
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM connections WHERE id = ? AND user_id = ?", (person_id, user_id))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({"status": "error", "message": "Not found"}), 404
+        
+        update_fields = []
+        update_values = []
+        
+        for key, value in data.items():
+            if key in ['full_name', 'contact_info', 'job_title', 'company', 'industry', 
+                       'sector', 'skills_experience', 'key_accomplishments', 'relationship_status',
+                       'mutual_connections', 'personal_notes', 'ai_summary', 'rating_momentum']:
+                update_fields.append(f"{key} = ?")
+                update_values.append(value)
+            elif key in ['ai_rating', 'days_since_contact']:
+                update_fields.append(f"{key} = ?")
+                try:
+                    clean_val = int(str(value).replace('/10', ''))
+                    update_values.append(clean_val)
+                except:
+                    update_values.append(value)
+        
+        if update_fields:
+            update_values.append(person_id)
+            update_values.append(user_id)
+            query = f"UPDATE connections SET {', '.join(update_fields)} WHERE id = ? AND user_id = ?"
+            cursor.execute(query, update_values)
+            conn.commit()
+        
+        conn.close()
+        return jsonify({"status": "success"}), 200
+        
+    except Exception as e:
+        print(f"Update error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/regenerate-summary/<person_id>', methods=['POST'])
+@login_required
+def regenerate_summary(person_id):
+    user_id = get_current_user_id()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM connections WHERE id = ? AND user_id = ?", (person_id, user_id))
+        person = cursor.fetchone()
+        
+        if not person:
+            conn.close()
+            return jsonify({"status": "error"}), 404
+        
+        person_dict = dict(person)
+        analysis = generate_ai_analysis(person_dict)
+        new_summary = analysis.get('ai_summary', 'Could not generate summary.')
+        
+        cursor.execute("UPDATE connections SET ai_summary = ? WHERE id = ? AND user_id = ?", 
+                      (new_summary, person_id, user_id))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"status": "success", "ai_summary": new_summary}), 200
+        
+    except Exception as e:
+        print(f"Regenerate error: {e}")
+        return jsonify({"status": "error"}), 500
+
+@app.route('/add', methods=['POST'])
+@login_required
+def add_connection():
+    user_id = get_current_user_id()
+    try:
+        data = {
+            'full_name': request.form.get('full_name', ''),
+            'contact_info': request.form.get('contact_info', ''),
+            'job_title': request.form.get('job_title', ''),
+            'company': request.form.get('company', ''),
+            'industry': request.form.get('industry', ''),
+            'sector': request.form.get('sector', ''),
+            'skills_experience': request.form.get('skills_experience', ''),
+            'key_accomplishments': request.form.get('key_accomplishments', ''),
+            'relationship_status': request.form.get('relationship_status', 'Professional'),
+            'days_since_contact': int(request.form.get('days_since_contact', 0)),
+            'mutual_connections': request.form.get('mutual_connections', ''),
+            'personal_notes': request.form.get('personal_notes', ''),
+            'ai_summary': request.form.get('ai_summary', ''),
+            'ai_rating': int(request.form.get('ai_rating', 5)),
+            'rating_momentum': request.form.get('rating_momentum', 'Stagnant')
+        }
+        
+        save_connection(user_id, data)
+        return redirect('/')
+        
+    except Exception as e:
+        print(f"Add connection error: {e}")
+        return str(e), 500
+
+@app.route('/search', methods=['POST'])
+@login_required
+def search():
+    user_id = get_current_user_id()
+    try:
+        data = request.get_json()
+        query = data.get('query', '').lower()
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM connections WHERE user_id = ?", (user_id,))
+        members = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        if 'reconnect' in query or 'follow up' in query:
+            stale = [m for m in members if m.get('days_since_contact', 0) > 14]
+            if stale:
+                names = ', '.join([m['full_name'] for m in stale[:3]])
+                answer = f"You should reconnect with: {names}. They haven't been contacted in a while."
+            else:
+                answer = "You're doing great! All your connections are recent."
+        
+        elif 'improving' in query or 'top' in query or 'best' in query:
+            improving = [m for m in members if m.get('rating_momentum') == 'Improving']
+            if improving:
+                names = ', '.join([f"{m['full_name']} ({m['ai_rating']}/10)" for m in improving])
+                answer = f"Your improving connections: {names}"
+            else:
+                answer = "No connections currently showing improving momentum."
+        
+        elif 'declining' in query or 'concern' in query:
+            declining = [m for m in members if m.get('rating_momentum') == 'Declining']
+            if declining:
+                names = ', '.join([m['full_name'] for m in declining])
+                answer = f"Connections needing attention: {names}"
+            else:
+                answer = "No declining connections - great job maintaining relationships!"
+        
+        else:
+            answer = f"I found {len(members)} total connections in your network. How can I help you manage them?"
+        
+        return jsonify({"answer": answer})
+        
+    except Exception as e:
+        print(f"Search error: {e}")
+        return jsonify({"answer": "Sorry, I couldn't process that request."}), 500
+
 @app.route('/api/process-audio', methods=['POST'])
 @login_required
 def process_audio():
@@ -352,7 +517,6 @@ def process_audio():
         with open(temp_file, 'wb') as f:
             f.write(audio_bytes)
 
-        # Transcribe
         model = load_whisper_model()
         result = model.transcribe(temp_file, fp16=False)
         raw_text = result["text"].strip()
@@ -362,7 +526,6 @@ def process_audio():
         if not raw_text:
             return jsonify({'error': 'No speech detected'}), 400
 
-        # Extract & analyze
         structured = extract_structured_data(raw_text)
         if not structured:
             return jsonify({'error': 'Could not extract data'}), 500
@@ -370,7 +533,6 @@ def process_audio():
         analysis = generate_ai_analysis(structured)
         structured.update(analysis)
 
-        # Save to current user
         user_id = get_current_user_id()
         save_connection(user_id, structured)
 
@@ -399,7 +561,6 @@ def get_connections():
 def health():
     return jsonify({'status': 'ok'})
 
-# ─── Startup ────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(Config.DB_PATH), exist_ok=True)
     init_db()

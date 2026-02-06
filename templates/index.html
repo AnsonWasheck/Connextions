@@ -163,6 +163,14 @@
                                     <span class="detail-value">{{ p.personal_notes or 'N/A' }}</span>
                                 </div>
 
+                                <!-- View More Button -->
+                                <div class="detail-item full-width" style="padding: 0; background: transparent; border: none;">
+                                    <button class="view-more-btn" onclick="event.stopPropagation(); openProfile('{{ p.id or loop.index }}')">
+                                        <i data-lucide="external-link" size="16"></i>
+                                        View Full Profile & Edit
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
                     </div>

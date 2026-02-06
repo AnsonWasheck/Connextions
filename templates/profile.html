@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Connection Profile - Vertex</title>
+    
+    <!-- External icon library -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Shared styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <button class="back-btn" onclick="window.close()">
+                    <i data-lucide="arrow-left" size="18"></i>
+                    Back to Network
+                </button>
+            </div>
+            <div class="logo-placeholder">
+                <i data-lucide="network" size="20"></i>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                    <i data-lucide="sun" size="18" id="theme-icon-light"></i>
+                    <i data-lucide="moon" size="18" id="theme-icon-dark" style="display: none;"></i>
+                </button>
+                <a href="/login" class="profile-icon" title="Account">
+                    <i data-lucide="user" size="20" style="color: white;"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="profile-main">
+            <!-- Left Sidebar - Profile Card -->
+            <aside class="profile-sidebar">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <span class="avatar-initial">{{ person.full_name[0] }}</span>
+                    </div>
+                    
+                    <h1 class="profile-name">{{ person.full_name }}</h1>
+                    <p class="profile-title">{{ person.job_title }}</p>
+                    <p class="profile-company">{{ person.company }}</p>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">AI Rating</div>
+                            <div class="stat-value">
+                                <div class="rating-circle-large">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="rating-circle-bg" cx="40" cy="40" r="34" />
+                                        <circle class="rating-circle-fill" cx="40" cy="40" r="34" 
+                                                stroke-dasharray="{{ (person.ai_rating * 21.36)|round(2) }} 213.6" />
+                                    </svg>
+                                    <span class="rating-number-large">{{ person.ai_rating }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-divider"></div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Momentum</div>
+                            <div class="stat-value">
+                                <span class="momentum-badge momentum-{{ person.rating_momentum }}">
+                                    {% if person.rating_momentum == 'Improving' %}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                    {% elif person.rating_momentum == 'Declining' %}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                    {% else %}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    {% endif %}
+                                    {{ person.rating_momentum }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-divider"></div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Last Contact</div>
+                            <div class="stat-value">{{ person.days_since_contact }} days ago</div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions-profile">
+                        <button class="action-btn action-btn-primary" onclick="toggleEditMode()">
+                            <i data-lucide="edit-3" size="16"></i>
+                            Edit Profile
+                        </button>
+                        <button class="action-btn action-btn-secondary">
+                            <i data-lucide="mail" size="16"></i>
+                            Send Message
+                        </button>
+                        <button class="action-btn action-btn-secondary">
+                            <i data-lucide="calendar" size="16"></i>
+                            Schedule Meeting
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Activity Timeline -->
+                <div class="timeline-card">
+                    <h3 class="section-title">
+                        <i data-lucide="activity" size="16"></i>
+                        Recent Activity
+                    </h3>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2 days ago</div>
+                                <div class="timeline-text">Rating updated to {{ person.ai_rating }}</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">{{ person.days_since_contact }} days ago</div>
+                                <div class="timeline-text">Last contacted</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">1 month ago</div>
+                                <div class="timeline-text">Added to network</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Dashboard Content -->
+            <main class="profile-content">
+                <!-- Edit Mode Toggle Banner -->
+                <div class="edit-mode-banner" id="editBanner" style="display: none;">
+                    <div class="banner-content">
+                        <i data-lucide="info" size="18"></i>
+                        <span>Edit mode active - Click any field to update</span>
+                    </div>
+                    <div class="banner-actions">
+                        <button class="btn-banner" onclick="saveChanges()">
+                            <i data-lucide="check" size="16"></i>
+                            Save Changes
+                        </button>
+                        <button class="btn-banner btn-cancel" onclick="cancelEdit()">
+                            <i data-lucide="x" size="16"></i>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
+                    
+                    <!-- Professional Information -->
+                    <section class="dashboard-card card-span-2">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="briefcase" size="20"></i>
+                                Professional Information
+                            </h2>
+                            <button class="card-action-btn" onclick="toggleEditSection('professional')">
+                                <i data-lucide="edit-2" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label class="info-label">Job Title</label>
+                                    <div class="info-value editable" data-field="job_title">{{ person.job_title }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Company</label>
+                                    <div class="info-value editable" data-field="company">{{ person.company }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Industry</label>
+                                    <div class="info-value editable" data-field="industry">{{ person.industry }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Sector</label>
+                                    <div class="info-value editable" data-field="sector">{{ person.sector or 'N/A' }}</div>
+                                </div>
+                                <div class="info-item info-item-full">
+                                    <label class="info-label">Skills & Experience</label>
+                                    <div class="info-value editable" data-field="skills_experience">{{ person.skills_experience or 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Contact Information -->
+                    <section class="dashboard-card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="mail" size="20"></i>
+                                Contact Information
+                            </h2>
+                            <button class="card-action-btn" onclick="toggleEditSection('contact')">
+                                <i data-lucide="edit-2" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-grid">
+                                <div class="info-item info-item-full">
+                                    <label class="info-label">Contact Details</label>
+                                    <div class="info-value editable" data-field="contact_info">{{ person.contact_info or 'N/A' }}</div>
+                                </div>
+                                <div class="info-item info-item-full">
+                                    <label class="info-label">Mutual Connections</label>
+                                    <div class="info-value editable" data-field="mutual_connections">{{ person.mutual_connections or 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Relationship Status -->
+                    <section class="dashboard-card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="users" size="20"></i>
+                                Relationship
+                            </h2>
+                            <button class="card-action-btn" onclick="toggleEditSection('relationship')">
+                                <i data-lucide="edit-2" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-grid">
+                                <div class="info-item info-item-full">
+                                    <label class="info-label">Status</label>
+                                    <div class="info-value editable-select" data-field="relationship_status">
+                                        <span class="relationship-badge relationship-{{ person.relationship_status.replace(' ', '-') }}">
+                                            {{ person.relationship_status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">AI Rating</label>
+                                    <div class="info-value editable-number" data-field="ai_rating">{{ person.ai_rating }}/10</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Days Since Contact</label>
+                                    <div class="info-value editable-number" data-field="days_since_contact">{{ person.days_since_contact }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- AI Summary -->
+                    <section class="dashboard-card card-span-2 card-purple">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="sparkles" size="20"></i>
+                                AI Summary
+                            </h2>
+                            <button class="card-action-btn" onclick="regenerateAISummary()">
+                                <i data-lucide="refresh-cw" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-value editable-textarea" data-field="ai_summary">
+                                {{ person.ai_summary or 'No AI summary available yet.' }}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Key Accomplishments -->
+                    <section class="dashboard-card card-span-2">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="trophy" size="20"></i>
+                                Key Accomplishments
+                            </h2>
+                            <button class="card-action-btn" onclick="toggleEditSection('accomplishments')">
+                                <i data-lucide="edit-2" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-value editable-textarea" data-field="key_accomplishments">
+                                {{ person.key_accomplishments or 'No accomplishments recorded yet.' }}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Personal Notes -->
+                    <section class="dashboard-card card-span-2">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="sticky-note" size="20"></i>
+                                Personal Notes
+                            </h2>
+                            <button class="card-action-btn" onclick="toggleEditSection('notes')">
+                                <i data-lucide="edit-2" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-value editable-textarea" data-field="personal_notes">
+                                {{ person.personal_notes or 'No personal notes yet.' }}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Interaction History -->
+                    <section class="dashboard-card card-span-2">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i data-lucide="message-circle" size="20"></i>
+                                Interaction History
+                            </h2>
+                            <button class="card-action-btn">
+                                <i data-lucide="plus" size="16"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="interaction-list">
+                                <div class="interaction-item">
+                                    <div class="interaction-icon">
+                                        <i data-lucide="mail" size="16"></i>
+                                    </div>
+                                    <div class="interaction-details">
+                                        <div class="interaction-title">Email sent</div>
+                                        <div class="interaction-date">{{ person.days_since_contact }} days ago</div>
+                                    </div>
+                                </div>
+                                <div class="empty-state">
+                                    <i data-lucide="inbox" size="32"></i>
+                                    <p>No interaction history recorded</p>
+                                    <button class="btn-add-interaction">
+                                        <i data-lucide="plus" size="16"></i>
+                                        Add Interaction
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='profile.js') }}"></script>
+</body>
+</html>
