@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex — Your Professional Network, Elevated</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #212121;
+            --bg-secondary: #171717;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ececec;
+            --text-secondary: #c5c5c5;
+            --text-tertiary: #9b9b9b;
+            --accent-primary: #60a5fa;
+            --accent-hover: #93c5fd;
+            --accent-light: #1e3a8a;
+            --border-primary: #3d3d3d;
+            --gradient-primary: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            --gradient-hero: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
+            --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Animated background gradient */
+        .bg-gradient {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(96, 165, 250, 0.10) 0%, transparent 50%);
+            animation: gradientShift 20s ease infinite;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(5%, -5%) rotate(120deg); }
+            66% { transform: translate(-5%, 5%) rotate(240deg); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-primary);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 6rem;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: var(--accent-light);
+            border: 1px solid var(--accent-primary);
+            border-radius: 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 2rem;
+            animation: slideDown 1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+            line-height: 1.6;
+            font-weight: 400;
+            animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) 0.4s backwards;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) 0.6s backwards;
+        }
+
+        .btn-primary {
+            padding: 16px 40px;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            padding: 16px 40px;
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-primary);
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        /* Floating elements */
+        .float-element {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            opacity: 0.12;
+            filter: blur(60px);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .float-1 {
+            width: 400px;
+            height: 400px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .float-2 {
+            width: 300px;
+            height: 300px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 5s;
+        }
+
+        .float-3 {
+            width: 500px;
+            height: 500px;
+            bottom: 10%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        /* Features Section */
+        .features {
+            position: relative;
+            z-index: 10;
+            padding: 8rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .section-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-primary);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-primary);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 2rem;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .stats-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 4rem;
+            text-align: center;
+        }
+
+        .stat-item {
+            animation: fadeInUp 1s ease backwards;
+        }
+
+        .stat-number {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            position: relative;
+            z-index: 10;
+            padding: 8rem 2rem;
+            text-align: center;
+        }
+
+        .cta-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem;
+            background: var(--bg-primary);
+            border-radius: 24px;
+            border: 1px solid var(--border-primary);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .cta-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .cta-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+
+        /* Footer */
+        footer {
+            position: relative;
+            z-index: 10;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .footer-tagline {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .footer-section-title {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .footer-link:hover {
+            color: var(--accent-primary);
+        }
+
+        .footer-bottom {
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 6rem 1.5rem 4rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                gap: 2rem;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .cta-container {
+                padding: 2.5rem 1.5rem;
+            }
+        }
+
+        /* Scroll animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i data-lucide="network" size="24"></i>
+                </div>
+                VERTEX
+            </div>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="/login" class="nav-link">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="float-element float-1"></div>
+        <div class="float-element float-2"></div>
+        <div class="float-element float-3"></div>
+        
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i data-lucide="sparkles" size="16"></i>
+                AI-Powered Professional Networking
+            </div>
+            <h1 class="hero-title">Your Network,<br>Intelligently Managed</h1>
+            <p class="hero-subtitle">
+                Vertex transforms how you manage professional relationships. Track connections, 
+                gain AI insights, and never miss an opportunity to strengthen your network.
+            </p>
+            <div class="hero-cta">
+                <a href="/register" class="btn-primary">
+                    Get Started Free
+                    <i data-lucide="arrow-right" size="20"></i>
+                </a>
+                <a href="#features" class="btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item fade-in">
+                <div class="stat-number">10K+</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">500K+</div>
+                <div class="stat-label">Connections Managed</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">User Satisfaction</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">AI Assistant</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header fade-in">
+            <div class="section-tag">Features</div>
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-description">
+                Powerful tools designed to help you build and maintain meaningful professional relationships
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="brain" size="28"></i>
+                </div>
+                <h3 class="feature-title">AI-Powered Insights</h3>
+                <p class="feature-description">
+                    Get intelligent recommendations on who to connect with, when to follow up, 
+                    and how to strengthen relationships based on AI analysis.
+                </p>
+            </div>
+
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="mic" size="28"></i>
+                </div>
+                <h3 class="feature-title">Voice Note Entry</h3>
+                <p class="feature-description">
+                    Add connections on the go with voice notes. Our AI extracts and organizes 
+                    all the important details automatically.
+                </p>
+            </div>
+
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="trending-up" size="28"></i>
+                </div>
+                <h3 class="feature-title">Relationship Tracking</h3>
+                <p class="feature-description">
+                    Monitor relationship momentum, track last contact dates, and receive smart 
+                    reminders to nurture your most valuable connections.
+                </p>
+            </div>
+
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="search" size="28"></i>
+                </div>
+                <h3 class="feature-title">Smart Search</h3>
+                <p class="feature-description">
+                    Find anyone in your network instantly. Search by industry, skills, company, 
+                    or ask our AI assistant natural language questions.
+                </p>
+            </div>
+
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="shield-check" size="28"></i>
+                </div>
+                <h3 class="feature-title">Privacy First</h3>
+                <p class="feature-description">
+                    Your network data is encrypted and secure. We never share your information 
+                    and you maintain complete control over your connections.
+                </p>
+            </div>
+
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i data-lucide="zap" size="28"></i>
+                </div>
+                <h3 class="feature-title">Lightning Fast</h3>
+                <p class="feature-description">
+                    Built for speed with modern technology. Access your network instantly, 
+                    anywhere, on any device with seamless synchronization.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container fade-in">
+            <h2 class="cta-title">Ready to Elevate Your Network?</h2>
+            <p class="cta-description">
+                Join thousands of professionals who are building stronger, more meaningful 
+                connections with Vertex.
+            </p>
+            <a href="/register" class="btn-primary">
+                Start Free Today
+                <i data-lucide="arrow-right" size="20"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <div class="logo-icon">
+                            <i data-lucide="network" size="24"></i>
+                        </div>
+                        VERTEX
+                    </div>
+                    <p class="footer-tagline">
+                        Your professional network, intelligently managed. Build stronger 
+                        relationships with AI-powered insights.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="footer-section-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="#features" class="footer-link">Features</a>
+                        <a href="#pricing" class="footer-link">Pricing</a>
+                        <a href="#about" class="footer-link">About</a>
+                        <a href="#" class="footer-link">Roadmap</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="footer-section-title">Company</h4>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">About Us</a>
+                        <a href="#" class="footer-link">Blog</a>
+                        <a href="#" class="footer-link">Careers</a>
+                        <a href="#" class="footer-link">Contact</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="footer-section-title">Legal</h4>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Privacy</a>
+                        <a href="#" class="footer-link">Terms</a>
+                        <a href="#" class="footer-link">Security</a>
+                        <a href="#" class="footer-link">Cookies</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>© 2024 Vertex. All rights reserved.</div>
+                <div>Built with ❤️ for better connections</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
