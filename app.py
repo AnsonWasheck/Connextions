@@ -26,7 +26,7 @@ CORS(app)
 
 # ─── Configuration ──────────────────────────────────────────────────────────────
 class Config:
-    HF_TOKEN = "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"
+    HF_TOKEN = "token"
     MODEL = "Qwen/Qwen2.5-7B-Instruct"
     DB_PATH = r"database/database_two.db"
     MAX_RESPONSE_TOKENS = 1000
